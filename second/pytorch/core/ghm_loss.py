@@ -10,9 +10,10 @@ Copyright (c) 2018 Multimedia Laboratory, CUHK.
 Licensed under the MIT License (see LICENSE for details)
 Written by Buyu Li
 """
+from __future__ import division
 
 from second.pytorch.core.losses import Loss, _sigmoid_cross_entropy_with_logits
-import torch 
+import torch
 
 class GHMCLoss(Loss):
     def __init__(self, bins=10, momentum=0):
@@ -104,7 +105,7 @@ class GHMRLoss(Loss):
         # gradient length
         g = torch.abs(diff / torch.sqrt(self.mu * self.mu + diff * diff)).detach().view(-1, num_codes)
         weights_ghm = torch.zeros_like(g)
-        
+
         valid = weights.view(-1, 1).expand(-1, num_codes) > 0
         # print(g.shape, prediction_tensor.shape, valid.shape)
         num_examples = max(valid.float().sum().item() / num_codes, 1.0)

@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 import contextlib
 import enum
 import math
@@ -6,7 +8,13 @@ import time
 import numpy as np
 
 
-def progress_str(val, *args, width=20, with_ptg=True):
+def progress_str(val, *args, **kwargs):
+    width = kwargs["width"]
+    if width is None:
+        width=20
+    with_ptg = kwargs["with_ptg"]
+    if with_ptg is None:
+        with_ptg=True
     val = max(0., min(val, 1.))
     assert width > 1
     pos = round(width * val) - 1
@@ -40,7 +48,7 @@ def progress_bar_iter(task_list, width=20, with_ptg=True, step_time_average=50, 
     total_step = len(task_list)
     step_times = []
     start_time = 0.0
-    name = '' if name is None else f"[{name}]"
+    name = '' if name is None else "[{}]".format(name)
     for i, task in enumerate(task_list):
         t = time.time()
         yield task
@@ -53,7 +61,7 @@ def progress_bar_iter(task_list, width=20, with_ptg=True, step_time_average=50, 
         remain_time_str = second_to_time_str(remain_time)
         time_str = start_time_str + '>' + remain_time_str
         prog_str = progress_str(
-            (i + 1) / total_step,
+            (i + 1.0) / total_step,
             speed_str,
             time_str,
             width=width,
@@ -68,7 +76,7 @@ def enumerate_bar(task_list, width=20, with_ptg=True, step_time_average=50, name
     total_step = len(task_list)
     step_times = []
     start_time = 0.0
-    name = '' if name is None else f"[{name}]"
+    name = '' if name is None else "[{}]".format(name)
     for i, task in enumerate(task_list):
         t = time.time()
         yield i, task
@@ -81,7 +89,7 @@ def enumerate_bar(task_list, width=20, with_ptg=True, step_time_average=50, name
         remain_time_str = second_to_time_str(remain_time)
         time_str = start_time_str + '>' + remain_time_str
         prog_str = progress_str(
-            (i + 1) / total_step,
+            (i + 1.0) / total_step,
             speed_str,
             time_str,
             width=width,

@@ -1,3 +1,4 @@
+from __future__ import division
 import pathlib
 import pickle
 import time
@@ -56,24 +57,24 @@ class Dataset(object):
         """Dataset must provide a unified function to get data.
         Args:
             query: int or dict. this param must support int for training.
-                if dict, should have this format (no example yet): 
+                if dict, should have this format (no example yet):
                 {
                     sensor_name: {
                         sensor_meta
                     }
                 }
-                if int, will return all sensor data. 
+                if int, will return all sensor data.
                 (TODO: how to deal with unsynchronized data?)
         Returns:
-            sensor_data: dict. 
-            if query is int (return all), return a dict with all sensors: 
+            sensor_data: dict.
+            if query is int (return all), return a dict with all sensors:
             {
                 sensor_name: sensor_data
                 ...
                 metadata: ... (for kitti, contains image_idx)
             }
-            
-            if sensor is lidar (all lidar point cloud must be concatenated to one array): 
+
+            if sensor is lidar (all lidar point cloud must be concatenated to one array):
             e.g. If your dataset have two lidar sensor, you need to return a single dict:
             {
                 "lidar": {

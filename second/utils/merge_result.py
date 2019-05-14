@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 import fire
 from pathlib import Path
 import re
@@ -18,4 +20,3 @@ def merge(path1, path2, output_path):
 
 if __name__ == '__main__':
     fire.Fire()
-

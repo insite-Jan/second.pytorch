@@ -1,3 +1,4 @@
+from __future__ import division
 import pathlib
 import pickle
 import time
@@ -130,7 +131,7 @@ def prep_pointcloud(input_dict,
                     random_flip_y=True,
                     sample_importance=1.0,
                     out_dtype=np.float32):
-    """convert point cloud to voxels, create targets if ground truths 
+    """convert point cloud to voxels, create targets if ground truths
     exists.
 
     input_dict format: dataset.get_sensor_data format
@@ -324,7 +325,7 @@ def prep_pointcloud(input_dict,
     if calib is not None:
         example["calib"] = calib
     feature_map_size = grid_size[:2] // out_size_factor
-    feature_map_size = [*feature_map_size, 1][::-1]
+    feature_map_size = np.append(feature_map_size, 1)[::-1]
     if anchor_cache is not None:
         anchors = anchor_cache["anchors"]
         anchors_bv = anchor_cache["anchors_bv"]

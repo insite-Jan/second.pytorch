@@ -3,6 +3,7 @@ PointPillars fork from SECOND.
 Code written by Alex Lang and Oscar Beijbom, 2018.
 Licensed under MIT License [see LICENSE].
 """
+from __future__ import division
 
 import torch
 from torch import nn
@@ -30,7 +31,7 @@ class PFNLayer(nn.Module):
         :param last_layer: <bool>. If last_layer, there is no concatenation of features.
         """
 
-        super().__init__()
+        super(PFNLayer, self).__init__()
         self.name = 'PFNLayer'
         self.last_vfe = last_layer
         if not self.last_vfe:
@@ -85,8 +86,13 @@ class PillarFeatureNetOld(nn.Module):
         :param pc_range: (<float>: 6). Point cloud range, only utilize x and y min.
         """
 
-        super().__init__()
+# <<<<<<< oldstate
+#         super(PillarFeatureNet, self).__init__()
+#         self.name = 'PillarFeatureNet'
+# =======
+        super(PillarFeatureNet, self).__init__()
         self.name = 'PillarFeatureNetOld'
+# >>>>>>> py2
         assert len(num_filters) > 0
         num_input_features += 5
         if with_distance:
@@ -434,7 +440,7 @@ class PointPillarsScatter(nn.Module):
         :param num_input_features: <int>. Number of input features.
         """
 
-        super().__init__()
+        super(PointPillarsScatter, self).__init__()
         self.name = 'PointPillarsScatter'
         self.output_shape = output_shape
         self.ny = output_shape[2]

@@ -1,3 +1,4 @@
+from __future__ import division
 import math
 from pathlib import Path
 import numba
@@ -151,4 +152,3 @@ def soft_nms_jit(boxes, sigma=0.5, Nt=0.3, threshold=0.001, method=0):
 
     keep = [i for i in range(N)]
     return keep
-

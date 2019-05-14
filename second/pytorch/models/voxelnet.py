@@ -1,3 +1,4 @@
+from __future__ import division
 import time
 from enum import Enum
 from functools import reduce
@@ -105,7 +106,7 @@ class VoxelNet(nn.Module):
                  num_direction_bins=2,
                  direction_limit_offset=0,
                  name='voxelnet'):
-        super().__init__()
+        super(VoxelNet, self).__init__()
         self.name = name
         self._sin_error_factor = sin_error_factor
         self._num_class = num_class
@@ -383,7 +384,7 @@ class VoxelNet(nn.Module):
                 scores: [N]
                 label_preds: [N]
                 metadata: meta-data which contains dataset-specific information.
-                    for kitti, it contains image idx (label idx), 
+                    for kitti, it contains image idx (label idx),
                     for nuscenes, sample_token is saved in it.
             }
         """
@@ -674,8 +675,8 @@ class VoxelNet(nn.Module):
             "pr": {},
         }
         for i, thresh in enumerate(self.rpn_metrics.thresholds):
-            ret["pr"][f"prec@{int(thresh*100)}"] = float(prec[i])
-            ret["pr"][f"rec@{int(thresh*100)}"] = float(recall[i])
+            ret["pr"]["prec@{}".format(int(thresh*100))] = float(prec[i])
+            ret["pr"]["rec@{}".format(int(thresh*100))] = float(recall[i])
         return ret
 
     def clear_metrics(self):
@@ -791,7 +792,7 @@ def prepare_loss_weights(labels,
         reg_weights /= torch.clamp(pos_normalizer, min=1.0)
     else:
         raise ValueError(
-            f"unknown loss norm type. available: {list(LossNormType)}")
+            "unknown loss norm type. available: {}".format(list(LossNormType)))
     return cls_weights, reg_weights, cared
 
 

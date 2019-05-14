@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 """Functions to build DetectionModel training optimizers."""
+from __future__ import division
 
 from torchplus.train import learning_schedules
 from torchplus.train import optim
@@ -21,12 +22,12 @@ from torch import nn
 from torchplus.train.fastai_optim import OptimWrapper, FastAIMixedOptim
 from functools import partial
 
-def children(m: nn.Module):
+def children(m):
     "Get children of `m`."
     return list(m.children())
 
 
-def num_children(m: nn.Module) -> int:
+def num_children(m):
     "Get number of children modules in `m`."
     return len(children(m))
 

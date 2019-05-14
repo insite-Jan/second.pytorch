@@ -83,7 +83,7 @@ class OneCycle(LRSchedulerStep):
                       (self.pct_start, partial(annealing_cos,
                                                *self.moms[::-1])))
         fai_optimizer.lr, fai_optimizer.mom = low_lr, self.moms[0]
-        super().__init__(fai_optimizer, total_step, lr_phases, mom_phases)
+        super(OneCycle, self).__init__(fai_optimizer, total_step, lr_phases, mom_phases)
 
 
 class ExponentialDecay(LRSchedulerStep):
@@ -115,7 +115,7 @@ class ExponentialDecay(LRSchedulerStep):
         else:
             func = lambda p: pow(decay_factor, (p / decay_length))
             lr_phases.append((0, func))
-        super().__init__(fai_optimizer, total_step, lr_phases, [])
+        super(ExponentialDecay, self).__init__(fai_optimizer, total_step, lr_phases, [])
 
 
 class ManualStepping(LRSchedulerStep):
@@ -127,7 +127,7 @@ class ManualStepping(LRSchedulerStep):
         for start, rate in zip(boundaries, rates):
             func = lambda p, _d=rate: _d
             lr_phases.append((start, func))
-        super().__init__(fai_optimizer, total_step, lr_phases, [])
+        super(ManualStepping, self).__init__(fai_optimizer, total_step, lr_phases, [])
 
 
 class FakeOptim:

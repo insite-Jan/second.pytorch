@@ -34,7 +34,7 @@ def latest_checkpoint(model_dir, model_name):
     ckpt_info_path = Path(model_dir) / "checkpoints.json"
     if not ckpt_info_path.is_file():
         return None
-    with open(ckpt_info_path, 'r') as f:
+    with open(str(ckpt_info_path), 'r') as f:
         ckpt_dict = json.loads(f.read())
     if model_name not in ckpt_dict['latest_ckpt']:
         return None
@@ -42,7 +42,7 @@ def latest_checkpoint(model_dir, model_name):
     ckpt_file_name = Path(model_dir) / latest_ckpt
     if not ckpt_file_name.is_file():
         return None
-    
+
     return str(ckpt_file_name)
 
 def _ordered_unique(seq):
@@ -63,7 +63,7 @@ def save(model_dir,
         model_name: name of your model. we find ckpts by name
         global_step: int, indicate current global step.
         max_to_keep: int, maximum checkpoints to keep.
-        keep_latest: bool, if True and there are too much ckpts, 
+        keep_latest: bool, if True and there are too much ckpts,
             will delete oldest ckpt. else will delete ckpt which has
             smallest global step.
     Returns:
@@ -78,7 +78,7 @@ def save(model_dir,
         if not ckpt_info_path.is_file():
             ckpt_info_dict = {'latest_ckpt': {}, 'all_ckpts': {}}
         else:
-            with open(ckpt_info_path, 'r') as f:
+            with open(str(ckpt_info_path), 'r') as f:
                 ckpt_info_dict = json.loads(f.read())
         ckpt_info_dict['latest_ckpt'][model_name] = ckpt_filename
         if model_name in ckpt_info_dict['all_ckpts']:
@@ -87,7 +87,8 @@ def save(model_dir,
             ckpt_info_dict['all_ckpts'][model_name] = [ckpt_filename]
         all_ckpts = ckpt_info_dict['all_ckpts'][model_name]
 
-        torch.save(model.state_dict(), ckpt_path)
+        with open(str(ckpt_path), 'w') as f:
+            torch.save(model.state_dict(), f)
         # check ckpt in all_ckpts is exist, if not, delete it from all_ckpts
         all_ckpts_checked = []
         for ckpt in all_ckpts:
@@ -107,17 +108,18 @@ def save(model_dir,
             os.remove(str(Path(model_dir) / ckpt_to_delete))
         all_ckpts_filename = _ordered_unique([Path(f).name for f in all_ckpts])
         ckpt_info_dict['all_ckpts'][model_name] = all_ckpts_filename
-        with open(ckpt_info_path, 'w') as f:
+        with open(str(ckpt_info_path), 'w') as f:
             f.write(json.dumps(ckpt_info_dict, indent=2))
 
 
 def restore(ckpt_path, model, map_func=None):
     if not Path(ckpt_path).is_file():
         raise ValueError("checkpoint {} not exist.".format(ckpt_path))
-    state_dict = torch.load(ckpt_path)
-    if map_func is not None:
-        map_func(state_dict)
-    model.load_state_dict(state_dict)
+    with open(str(ckpt_path), 'r')  as f:
+        state_dict = torch.load(f)
+        if map_func is not None:
+            map_func(state_dict)
+        model.load_state_dict(state_dict)
     print("Restoring parameters from {}".format(ckpt_path))
 
 

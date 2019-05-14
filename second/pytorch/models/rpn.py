@@ -1,3 +1,4 @@
+from __future__ import division
 import time
 
 import numpy as np
@@ -257,7 +258,7 @@ class RPNNoHeadBase(nn.Module):
             ConvTranspose2d = change_default_args(bias=True)(
                 nn.ConvTranspose2d)
 
-        in_filters = [num_input_features, *num_filters[:-1]]
+        in_filters = [num_input_features] + num_filters[:-1]
         blocks = []
         deblocks = []
 

@@ -1,3 +1,4 @@
+from __future__ import division, print_function
 from pathlib import Path
 
 import numba
@@ -141,7 +142,7 @@ def bev_box_encode(boxes,
     Args:
         boxes ([N, 7] Tensor): normal boxes: x, y, z, w, l, h, r
         anchors ([N, 7] Tensor): anchors
-        encode_angle_to_vector: bool. increase aos performance, 
+        encode_angle_to_vector: bool. increase aos performance,
             decrease other performance.
     """
     # need to convert boxes to z-center format
@@ -206,14 +207,14 @@ def bev_box_decode(box_encodings,
 
 def corners_nd(dims, origin=0.5):
     """generate relative box corners based on length per dim and
-    origin point. 
-    
+    origin point.
+
     Args:
         dims (float array, shape=[N, ndim]): array of length per dim
         origin (list or array or float): origin point relate to smallest point.
-    
+
     Returns:
-        float array, shape=[N, 2 ** ndim, ndim]: returned corners. 
+        float array, shape=[N, 2 ** ndim, ndim]: returned corners.
         point layout example: (2d) x0y0, x0y1, x1y0, x1y1;
             (3d) x0y0z0, x0y0z1, x0y1z0, x0y1z1, x1y0z0, x1y0z1, x1y1z0, x1y1z1
             where x0 < x1, y0 < y1, z0 < z1
@@ -338,12 +339,12 @@ def rotation_points_single_angle(points, angle, axis=0):
     else:
         raise ValueError("axis should in range")
 
-    return points @ rot_mat_T
+    return np.dot(points, rot_mat_T)
 
 
 def rotation_2d(points, angles):
     """rotation 2d points based on origin point clockwise when angle positive.
-    
+
     Args:
         points (float array, shape=[N, point_size, 2]): points to be rotated.
         angles (float array, shape=[N]): rotation angle.
@@ -359,7 +360,7 @@ def rotation_2d(points, angles):
 
 def rotation_box(box_corners, angle):
     """rotation 2d points based on origin point clockwise when angle positive.
-    
+
     Args:
         points (float array, shape=[N, point_size, 2]): points to be rotated.
         angle (float): rotation angle.
@@ -371,7 +372,7 @@ def rotation_box(box_corners, angle):
     rot_cos = np.cos(angle)
     rot_mat_T = np.array([[rot_cos, -rot_sin], [rot_sin, rot_cos]],
                          dtype=box_corners.dtype)
-    return box_corners @ rot_mat_T
+    return np.dot(box_corners, rot_mat_T)
 
 
 def center_to_corner_box3d(centers,
@@ -380,7 +381,7 @@ def center_to_corner_box3d(centers,
                            origin=(0.5, 0.5, 0.5),
                            axis=2):
     """convert kitti locations, dimensions and angles to corners
-    
+
     Args:
         centers (float array, shape=[N, 3]): locations in kitti label file.
         dims (float array, shape=[N, 3]): dimensions in kitti label file.
@@ -405,12 +406,12 @@ def center_to_corner_box3d(centers,
 def center_to_corner_box2d(centers, dims, angles=None, origin=0.5):
     """convert kitti locations, dimensions and angles to corners.
     format: center(xy), dims(xy), angles(clockwise when positive)
-    
+
     Args:
         centers (float array, shape=[N, 2]): locations in kitti label file.
         dims (float array, shape=[N, 2]): dimensions in kitti label file.
         angles (float array, shape=[N]): rotation_y in kitti label file.
-    
+
     Returns:
         [type]: [description]
     """
@@ -444,7 +445,7 @@ def box2d_to_corner_jit(boxes):
         rot_mat_T[0, 1] = -rot_sin
         rot_mat_T[1, 0] = rot_sin
         rot_mat_T[1, 1] = rot_cos
-        box_corners[i] = corners[i] @ rot_mat_T + boxes[i, :2]
+        box_corners[i] = np.dot(corners[i], rot_mat_T + boxes[i, :2])
     return box_corners
 
 
@@ -514,7 +515,7 @@ def projection_matrix_to_CRT_kitti(proj):
     Rinv, Cinv = np.linalg.qr(RinvCinv)
     C = np.linalg.inv(Cinv)
     R = np.linalg.inv(Rinv)
-    T = Cinv @ CT
+    T = np.dot(Cinv, CT)
     return C, R, T
 
 
@@ -642,7 +643,7 @@ def project_to_image(points_3d, proj_mat):
     points_shape = list(points_3d.shape)
     points_shape[-1] = 1
     points_4 = np.concatenate([points_3d, np.zeros(points_shape)], axis=-1)
-    point_2d = points_4 @ proj_mat.T
+    point_2d = np.dot(points_4, proj_mat.T)
     point_2d_res = point_2d[..., :2] / point_2d[..., 2:3]
     return point_2d_res
 
@@ -651,7 +652,7 @@ def camera_to_lidar(points, r_rect, velo2cam):
     points_shape = list(points.shape[0:-1])
     if points.shape[-1] == 3:
         points = np.concatenate([points, np.ones(points_shape + [1])], axis=-1)
-    lidar_points = points @ np.linalg.inv((r_rect @ velo2cam).T)
+    lidar_points = np.dot(points, np.linalg.inv((np.dot(r_rect, velo2cam)).T))
     return lidar_points[..., :3]
 
 
@@ -659,7 +660,7 @@ def lidar_to_camera(points, r_rect, velo2cam):
     points_shape = list(points.shape[:-1])
     if points.shape[-1] == 3:
         points = np.concatenate([points, np.ones(points_shape + [1])], axis=-1)
-    camera_points = points @ (r_rect @ velo2cam).T
+    camera_points = np.dot(points, (np.dot(r_rect, velo2cam)).T)
     return camera_points[..., :3]
 
 
@@ -685,7 +686,7 @@ def remove_outside_points(points, rect, Trv2c, P2, image_shape):
     image_bbox = [0, 0, image_shape[1], image_shape[0]]
     frustum = get_frustum(image_bbox, C)
     frustum -= T
-    frustum = np.linalg.inv(R) @ frustum.T
+    frustum = np.dot(np.linalg.inv(R), frustum.T)
     frustum = camera_to_lidar(frustum.T, rect, Trv2c)
     frustum_surfaces = corner_to_surfaces_3d_jit(frustum[np.newaxis, ...])
     indices = points_in_convex_polygon_3d_jit(points[:, :3], frustum_surfaces)
@@ -695,7 +696,7 @@ def remove_outside_points(points, rect, Trv2c, P2, image_shape):
 
 @numba.jit(nopython=True)
 def iou_jit(boxes, query_boxes, eps=1.0):
-    """calculate box iou. note that jit version runs 2x faster than cython in 
+    """calculate box iou. note that jit version runs 2x faster than cython in
     my machine!
     Parameters
     ----------
@@ -724,7 +725,91 @@ def iou_jit(boxes, query_boxes, eps=1.0):
                     overlaps[n, k] = iw * ih / ua
     return overlaps
 
+# @numba.jit(nopython=True)
+# def iou_3d_jit(boxes, query_boxes, add1=True):
+#     """calculate box iou3d,
+#     ----------
+#     boxes: (N, 6) ndarray of float
+#     query_boxes: (K, 6) ndarray of float
+#     Returns
+#     -------
+#     overlaps: (N, K) ndarray of overlap between boxes and query_boxes
+#     """
+#     N = boxes.shape[0]
+#     K = query_boxes.shape[0]
+#     overlaps = np.zeros((N, K), dtype=boxes.dtype)
+#     if add1:
+#         add1 = 1.0
+#     else:
+#         add1 = 0.0
+#     for k in range(K):
+#         box_area = ((query_boxes[k, 3] - query_boxes[k, 0] + add1) *
+#                     (query_boxes[k, 4] - query_boxes[k, 1] + add1) *
+#                     (query_boxes[k, 5] - query_boxes[k, 2] + add1))
+#         for n in range(N):
+#             iw = (min(boxes[n, 3], query_boxes[k, 3]) - max(
+#                 boxes[n, 0], query_boxes[k, 0]) + add1)
+#             if iw > 0:
+#                 ih = (min(boxes[n, 4], query_boxes[k, 4]) - max(
+#                     boxes[n, 1], query_boxes[k, 1]) + add1)
+#                 if ih > 0:
+#                     il = (min(boxes[n, 5], query_boxes[k, 5]) - max(
+#                         boxes[n, 2], query_boxes[k, 2]) + add1)
+#                     if il > 0:
+#                         ua = float((boxes[n, 3] - boxes[n, 0] + add1) *
+#                                    (boxes[n, 4] - boxes[n, 1] + add1) *
+#                                    (boxes[n, 5] - boxes[n, 2] + add1) +
+#                                    box_area - iw * ih * il)
+#                         overlaps[n, k] = iw * ih * il / ua
+#     return overlaps
 
+
+# @numba.jit(nopython=True)
+# def iou_nd_jit(boxes, query_boxes, add1=True):
+#     """calculate box iou nd, 2x slower than iou_jit.
+#     ----------
+#     boxes: (N, ndim * 2) ndarray of float
+#     query_boxes: (K, ndim * 2) ndarray of float
+#     Returns
+#     -------
+#     overlaps: (N, K) ndarray of overlap between boxes and query_boxes
+#     """
+#     N = boxes.shape[0]
+#     K = query_boxes.shape[0]
+#     ndim = boxes.shape[1] // 2
+#     overlaps = np.zeros((N, K), dtype=boxes.dtype)
+#     side_lengths = np.zeros((ndim, ), dtype=boxes.dtype)
+#     if add1:
+#         add1 = 1.0
+#     else:
+#         add1 = 0.0
+#     invalid = False
+#     for k in range(K):
+#         qbox_area = (query_boxes[k, ndim] - query_boxes[k, 0] + add1)
+#         for i in range(1, ndim):
+#             qbox_area *= (query_boxes[k, ndim + i] - query_boxes[k, i] + add1)
+#         for n in range(N):
+#             invalid = False
+#             for i in range(ndim):
+#                 side_length = (
+#                     min(boxes[n, i + ndim], query_boxes[k, i + ndim]) - max(
+#                         boxes[n, i], query_boxes[k, i]) + add1)
+#                 if side_length <= 0:
+#                     invalid = True
+#                     break
+#                 side_lengths[i] = side_length
+#             if not invalid:
+#                 box_area = (boxes[n, ndim] - boxes[n, 0] + add1)
+#                 for i in range(1, ndim):
+#                     box_area *= (boxes[n, ndim + i] - boxes[n, i] + add1)
+#                 inter = side_lengths[0]
+#                 for i in range(1, ndim):
+#                     inter *= side_lengths[i]
+#                 # inter = np.prod(side_lengths)
+#                 ua = float(box_area + qbox_area - inter)
+#                 overlaps[n, k] = inter / ua
+
+#     return overlaps
 def points_in_rbbox(points, rbbox, z_axis=2, origin=(0.5, 0.5, 0.5)):
     rbbox_corners = center_to_corner_box3d(
         rbbox[:, :3], rbbox[:, 3:6], rbbox[:, 6], origin=origin, axis=z_axis)
@@ -744,9 +829,9 @@ def corner_to_surfaces_3d(corners):
     to surfaces that normal vectors all direct to internal.
 
     Args:
-        corners (float array, [N, 8, 3]): 3d box corners. 
+        corners (float array, [N, 8, 3]): 3d box corners.
     Returns:
-        surfaces (float array, [N, 6, 4, 3]): 
+        surfaces (float array, [N, 6, 4, 3]):
     """
     # box_corners: [N, 8, 3], must from corner functions in this module
     surfaces = np.array([
@@ -766,9 +851,9 @@ def corner_to_surfaces_3d_jit(corners):
     to surfaces that normal vectors all direct to internal.
 
     Args:
-        corners (float array, [N, 8, 3]): 3d box corners. 
+        corners (float array, [N, 8, 3]): 3d box corners.
     Returns:
-        surfaces (float array, [N, 6, 4, 3]): 
+        surfaces (float array, [N, 6, 4, 3]):
     """
     # box_corners: [N, 8, 3], must from corner functions in this module
     num_boxes = corners.shape[0]
@@ -784,7 +869,7 @@ def corner_to_surfaces_3d_jit(corners):
 
 
 def assign_label_to_voxel(gt_boxes, coors, voxel_size, coors_range):
-    """assign a 0/1 label to each voxel based on whether 
+    """assign a 0/1 label to each voxel based on whether
     the center of voxel is in gt_box. LIDAR.
     """
     voxel_size = np.array(voxel_size, dtype=gt_boxes.dtype)
@@ -804,7 +889,7 @@ def assign_label_to_voxel(gt_boxes, coors, voxel_size, coors_range):
 
 
 def assign_label_to_voxel_v3(gt_boxes, coors, voxel_size, coors_range):
-    """assign a 0/1 label to each voxel based on whether 
+    """assign a 0/1 label to each voxel based on whether
     the center of voxel is in gt_box. LIDAR.
     """
     voxel_size = np.array(voxel_size, dtype=gt_boxes.dtype)
@@ -841,7 +926,7 @@ def image_box_region_area(img_cumsum, bbox):
     Iabcd = ID-IB-IC+IA
     Args:
         img_cumsum: [M, H, W](yx) cumsumed image.
-        bbox: [N, 4](xyxy) bounding box, 
+        bbox: [N, 4](xyxy) bounding box,
     """
     N = bbox.shape[0]
     M = img_cumsum.shape[0]

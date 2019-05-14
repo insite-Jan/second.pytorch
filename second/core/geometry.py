@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 import numba
 
@@ -5,11 +6,11 @@ import numba
 @numba.njit
 def is_line_segment_intersection_jit(lines1, lines2):
     """check if line segments1 and line segments2 have cross point
-    
+
     Args:
         lines1 (float, [N, 2, 2]): [description]
         lines2 (float, [M, 2, 2]): [description]
-    
+
     Returns:
         [type]: [description]
     """
@@ -101,11 +102,11 @@ def points_in_convex_polygon_3d_jit_v1(points,
     """check points is in 3d convex polygons.
     Args:
         points: [num_points, 3] array.
-        polygon_surfaces: [num_polygon, max_num_surfaces, 
-            max_num_points_of_surface, 3] 
+        polygon_surfaces: [num_polygon, max_num_surfaces,
+            max_num_points_of_surface, 3]
             array. all surfaces' normal vector must direct to internal.
             max_num_points_of_surface must at least 3.
-        num_surfaces: [num_polygon] array. indicate how many surfaces 
+        num_surfaces: [num_polygon] array. indicate how many surfaces
             a polygon contain
     Returns:
         [num_points, num_polygon] bool array.
@@ -152,11 +153,11 @@ def points_in_convex_polygon_3d_jit(points,
     """check points is in 3d convex polygons.
     Args:
         points: [num_points, 3] array.
-        polygon_surfaces: [num_polygon, max_num_surfaces, 
-            max_num_points_of_surface, 3] 
+        polygon_surfaces: [num_polygon, max_num_surfaces,
+            max_num_points_of_surface, 3]
             array. all surfaces' normal vector must direct to internal.
             max_num_points_of_surface must at least 3.
-        num_surfaces: [num_polygon] array. indicate how many surfaces 
+        num_surfaces: [num_polygon] array. indicate how many surfaces
             a polygon contain
     Returns:
         [num_points, num_polygon] bool array.
@@ -206,11 +207,11 @@ def _points_in_convex_polygon_3d_jit(points,
     """check points is in 3d convex polygons.
     Args:
         points: [num_points, 3] array.
-        polygon_surfaces: [num_polygon, max_num_surfaces, 
-            max_num_points_of_surface, 3] 
+        polygon_surfaces: [num_polygon, max_num_surfaces,
+            max_num_points_of_surface, 3]
             array. all surfaces' normal vector must direct to internal.
             max_num_points_of_surface must at least 3.
-        num_surfaces: [num_polygon] array. indicate how many surfaces 
+        num_surfaces: [num_polygon] array. indicate how many surfaces
             a polygon contain
     Returns:
         [num_points, num_polygon] bool array.
@@ -328,7 +329,7 @@ def points_in_convex_polygon(points, polygon, clockwise=True):
     return np.all(cross > 0, axis=2)
 
 
-@numba.njit 
+@numba.njit
 def surface_equ_3d_jitv2(surfaces):
     # polygon_surfaces: [num_polygon, num_surfaces, num_points_of_polygon, 3]
     num_polygon = surfaces.shape[0]
@@ -348,25 +349,25 @@ def surface_equ_3d_jitv2(surfaces):
             normal_vec[i, j, 0] = (sv0[1] * sv1[2] - sv0[2] * sv1[1])
             normal_vec[i, j, 1] = (sv0[2] * sv1[0] - sv0[0] * sv1[2])
             normal_vec[i, j, 2] = (sv0[0] * sv1[1] - sv0[1] * sv1[0])
-            
+
             d[i, j] = -surfaces[i, j, 0, 0] * normal_vec[i, j, 0] - \
                       surfaces[i, j, 0, 1] * normal_vec[i, j, 1] - \
                        surfaces[i, j, 0, 2] * normal_vec[i, j, 2]
     return normal_vec, d
 
 
-@numba.njit 
+@numba.njit
 def points_in_convex_polygon_3d_jit_v2(points,
                                     surfaces,
                                     num_surfaces=None):
     """check points is in 3d convex polygons.
     Args:
         points: [num_points, 3] array.
-        polygon_surfaces: [num_polygon, max_num_surfaces, 
-            max_num_points_of_surface, 3] 
+        polygon_surfaces: [num_polygon, max_num_surfaces,
+            max_num_points_of_surface, 3]
             array. all surfaces' normal vector must direct to internal.
             max_num_points_of_surface must at least 3.
-        num_surfaces: [num_polygon] array. indicate how many surfaces 
+        num_surfaces: [num_polygon] array. indicate how many surfaces
             a polygon contain
     Returns:
         [num_points, num_polygon] bool array.
@@ -390,11 +391,11 @@ def points_in_convex_polygon_3d_jit_v2(points,
             normal_vec[i, j, 0] = (sv0[1] * sv1[2] - sv0[2] * sv1[1])
             normal_vec[i, j, 1] = (sv0[2] * sv1[0] - sv0[0] * sv1[2])
             normal_vec[i, j, 2] = (sv0[0] * sv1[1] - sv0[1] * sv1[0])
-            
+
             d[i, j] = -surfaces[i, j, 0, 0] * normal_vec[i, j, 0] - \
                       surfaces[i, j, 0, 1] * normal_vec[i, j, 1] - \
                        surfaces[i, j, 0, 2] * normal_vec[i, j, 2]
-    
+
     sign = 0.0
     for i in range(num_points):
         for j in range(num_polygon):
@@ -406,4 +407,3 @@ def points_in_convex_polygon_3d_jit_v2(points,
                     ret[i, j] = False
                     break
     return ret
-

@@ -64,7 +64,7 @@ def build(input_reader_config,
         db_sampler = dbsampler_builder.build(db_sampler_cfg)
     grid_size = voxel_generator.grid_size
     feature_map_size = grid_size[:2] // out_size_factor
-    feature_map_size = [*feature_map_size, 1][::-1]
+    feature_map_size = np.append(feature_map_size, 1)[::-1]
     print("feature_map_size", feature_map_size)
     assert all([n != '' for n in target_assigner.classes]), "you must specify class_name in anchor_generators."
     dataset_cls = get_dataset_class(dataset_cfg.dataset_class_name)

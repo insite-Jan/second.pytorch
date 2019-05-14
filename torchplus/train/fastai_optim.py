@@ -23,7 +23,7 @@ def split_bn_bias(layer_groups):
     return split_groups
 
 
-def get_master(layer_groups, flat_master: bool = False):
+def get_master(layer_groups, flat_master=False):
     "Return two lists, one for the model parameters in FP16 and one for the master parameters in FP32."
     split_groups = split_bn_bias(layer_groups)
     model_params = [[
@@ -50,7 +50,7 @@ def get_master(layer_groups, flat_master: bool = False):
 
 
 def model_g2master_g(model_params, master_params,
-                     flat_master: bool = False) -> None:
+                     flat_master=False):
     "Copy the `model_params` gradients to `master_params` for the optimizer step."
     if flat_master:
         for model_group, master_group in zip(model_params, master_params):
@@ -70,7 +70,7 @@ def model_g2master_g(model_params, master_params,
 
 
 def master2model(model_params, master_params,
-                 flat_master: bool = False) -> None:
+                 flat_master=False):
     "Copy `master_params` to `model_params`."
     if flat_master:
         for model_group, master_group in zip(model_params, master_params):
@@ -93,17 +93,17 @@ def listify(p=None, q=None):
     elif not isinstance(p, Iterable): p = [p]
     n = q if type(q) == int else len(p) if q is None else len(q)
     if len(p) == 1: p = p * n
-    assert len(p) == n, f'List len mismatch ({len(p)} vs {n})'
+    assert len(p) == n, 'List len mismatch ({} vs {})'.format(len(p), n)
     return list(p)
 
 
-def trainable_params(m: nn.Module):
+def trainable_params(m):
     "Return list of trainable params in `m`."
     res = filter(lambda p: p.requires_grad, m.parameters())
     return res
 
 
-def is_tuple(x) -> bool:
+def is_tuple(x):
     return isinstance(x, tuple)
 
 
@@ -111,7 +111,7 @@ def is_tuple(x) -> bool:
 class OptimWrapper(torch.optim.Optimizer):
     "Basic wrapper around `opt` to simplify hyper-parameters changes."
 
-    def __init__(self, opt, wd, true_wd: bool = False, bn_wd: bool = True):
+    def __init__(self, opt, wd, true_wd=False, bn_wd=True):
         # super().__init__(opt.param_groups, dict())
         self.opt, self.true_wd, self.bn_wd = opt, true_wd, bn_wd
         self.opt_keys = list(self.opt.param_groups[0].keys())
@@ -147,11 +147,11 @@ class OptimWrapper(torch.optim.Optimizer):
             true_wd=self.true_wd,
             bn_wd=self.bn_wd)
 
-    def __repr__(self) -> str:
-        return f'OptimWrapper over {repr(self.opt)}.\nTrue weight decay: {self.true_wd}'
+    def __repr__(self):
+        return 'OptimWrapper over {}.\nTrue weight decay: {}'.format(repr(self.opt), self.true_wd)
 
     #Pytorch optimizer methods
-    def step(self) -> None:
+    def step(self):
         "Set weight decay and step optimizer."
         # weight decay outside of optimizer step (AdamW)
         if self.true_wd:
@@ -166,7 +166,7 @@ class OptimWrapper(torch.optim.Optimizer):
             self.set_val('weight_decay', listify(0, self._wd))
         self.opt.step()
 
-    def zero_grad(self) -> None:
+    def zero_grad(self):
         "Clear optimizer gradients."
         self.opt.zero_grad()
 
@@ -207,19 +207,19 @@ class OptimWrapper(torch.optim.Optimizer):
 
     #Hyperparameters as properties
     @property
-    def lr(self) -> float:
+    def lr(self):
         return self._lr[-1]
 
     @lr.setter
-    def lr(self, val: float) -> None:
+    def lr(self, val):
         self._lr = self.set_val('lr', listify(val, self._lr))
 
     @property
-    def mom(self) -> float:
+    def mom(self):
         return self._mom[-1]
 
     @mom.setter
-    def mom(self, val: float) -> None:
+    def mom(self, val):
         if 'momentum' in self.opt_keys:
             self.set_val('momentum', listify(val, self._mom))
         elif 'betas' in self.opt_keys:
@@ -227,11 +227,11 @@ class OptimWrapper(torch.optim.Optimizer):
         self._mom = listify(val, self._mom)
 
     @property
-    def beta(self) -> float:
+    def beta(self):
         return None if self._beta is None else self._beta[-1]
 
     @beta.setter
-    def beta(self, val: float) -> None:
+    def beta(self, val):
         "Set beta (or alpha as makes sense for given optimizer)."
         if val is None: return
         if 'betas' in self.opt_keys:
@@ -241,11 +241,11 @@ class OptimWrapper(torch.optim.Optimizer):
         self._beta = listify(val, self._beta)
 
     @property
-    def wd(self) -> float:
+    def wd(self):
         return self._wd[-1]
 
     @wd.setter
-    def wd(self, val: float) -> None:
+    def wd(self, val):
         "Set weight decay."
         if not self.true_wd:
             self.set_val(
@@ -253,7 +253,7 @@ class OptimWrapper(torch.optim.Optimizer):
         self._wd = listify(val, self._wd)
 
     #Helper functions
-    def read_defaults(self) -> None:
+    def read_defaults(self):
         "Read the values inside the optimizer for the hyper-parameters."
         self._beta = None
         if 'lr' in self.opt_keys: self._lr = self.read_val('lr')
@@ -264,7 +264,7 @@ class OptimWrapper(torch.optim.Optimizer):
         if 'weight_decay' in self.opt_keys:
             self._wd = self.read_val('weight_decay')
 
-    def set_val(self, key: str, val, bn_groups: bool = True):
+    def set_val(self, key, val, bn_groups=True):
         "Set `val` inside the optimizer dictionary at `key`."
         if is_tuple(val): val = [(v1, v2) for v1, v2 in zip(*val)]
         for v, pg1, pg2 in zip(val, self.opt.param_groups[::2],
@@ -273,7 +273,7 @@ class OptimWrapper(torch.optim.Optimizer):
             if bn_groups: pg2[key] = v
         return val
 
-    def read_val(self, key: str):
+    def read_val(self, key):
         "Read a hyperparameter `key` in the optimizer dictionary."
         val = [pg[key] for pg in self.opt.param_groups[::2]]
         if is_tuple(val[0]): val = [o[0] for o in val], [o[1] for o in val]

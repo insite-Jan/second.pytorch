@@ -21,6 +21,7 @@ Note: If users wishes to also use their own InputReaders with the Object
 Detection configuration framework, they should define their own builder function
 that wraps the build function.
 """
+from __future__ import division
 
 from torch.utils.data import Dataset
 
@@ -51,7 +52,7 @@ def build(input_reader_config,
           training,
           voxel_generator,
           target_assigner=None,
-          multi_gpu=False) -> DatasetWrapper:
+          multi_gpu=False):
     """Builds a tensor dictionary based on the InputReader config.
 
     Args:

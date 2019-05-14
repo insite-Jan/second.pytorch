@@ -1,3 +1,4 @@
+from __future__ import division
 import json
 import pickle
 import time
@@ -102,7 +103,7 @@ class NuScenesDataset(Dataset):
             num_lidar_pts = num_lidar_pts[mask]
             gt_names_mapped = [self._kitti_name_mapping[n] for n in gt_names]
             det_range = np.array([cls_range_map[n] for n in gt_names_mapped])
-            det_range = det_range[..., np.newaxis] @ np.array([[-1, -1, 1, 1]])
+            det_range = np.dot(det_range[..., np.newaxis], np.array([[-1, -1, 1, 1]]))
             mask = (gt_boxes[:, :2] >= det_range[:, :2]).all(1)
             mask &= (gt_boxes[:, :2] <= det_range[:, 2:]).all(1)
             gt_names = gt_names[mask]
@@ -176,8 +177,8 @@ class NuScenesDataset(Dataset):
                 count=-1).reshape([-1, 5])
             sweep_ts = sweep["timestamp"] / 1e6
             points_sweep[:, 3] /= 255
-            points_sweep[:, :3] = points_sweep[:, :3] @ sweep[
-                "sweep2lidar_rotation"].T
+            points_sweep[:, :3] = np.dot(points_sweep[:, :3], sweep[
+                "sweep2lidar_rotation"].T)
             points_sweep[:, :3] += sweep["sweep2lidar_translation"]
             points_sweep[:, 4] = ts - sweep_ts
             sweep_points_list.append(points_sweep)
@@ -360,31 +361,50 @@ class NuScenesDataset(Dataset):
             json.dump(nusc_submissions, f)
         eval_main_file = Path(__file__).resolve().parent / "nusc_eval.py"
         # why add \"{}\"? to support path with spaces.
-        cmd = f"python {str(eval_main_file)} --root_path=\"{str(self._root_path)}\""
-        cmd += f" --version={self.version} --eval_version={self.eval_version}"
-        cmd += f" --res_path=\"{str(res_path)}\" --eval_set={eval_set_map[self.version]}"
-        cmd += f" --output_dir=\"{output_dir}\""
+# <<<<<<< oldstate
+        cmd = "python {} --root_path=\"{}\"".format(str(eval_main_file), str(self._root_path))
+        cmd += " --version={} --eval_version={}".format(self.version, self.eval_version)
+        cmd += " --res_path=\"{}\" --eval_set={}".format(res_path, eval_set_map[self.version])
+        cmd += " --output_dir=\"{}\"".format(output_dir)
+# =======
+#         cmd = f"python {str(eval_main_file)} --root_path=\"{str(self._root_path)}\""
+#         cmd += f" --version={self.version} --eval_version={self.eval_version}"
+#         cmd += f" --res_path=\"{str(res_path)}\" --eval_set={eval_set_map[self.version]}"
+#         cmd += f" --output_dir=\"{output_dir}\""
+# >>>>>>> py2
         # use subprocess can release all nusc memory after evaluation
         subprocess.check_output(cmd, shell=True)
         with open(Path(output_dir) / "metrics_summary.json", "r") as f:
             metrics = json.load(f)
         detail = {}
-        res_path.unlink()  # delete results_nusc.json since it's very large
-        result = f"Nusc {version} Evaluation\n"
+# <<<<<<< oldstate
+        result = "Nusc {} Evaluation\n".format(version)
         for name in mapped_class_names:
             detail[name] = {}
             for k, v in metrics["label_aps"][name].items():
-                detail[name][f"dist@{k}"] = v
-            tp_errs = []
-            tp_names = []
-            for k, v in metrics["label_tp_errors"][name].items():
-                detail[name][k] = v
-                tp_errs.append(f"{v:.4f}")
-                tp_names.append(k)
+                detail[name]["dist@{}".format(k)] = v
             threshs = ', '.join(list(metrics["label_aps"][name].keys()))
             scores = list(metrics["label_aps"][name].values())
-            scores = ', '.join([f"{s * 100:.2f}" for s in scores])
-            result += f"{name} Nusc dist AP@{threshs} and TP errors\n"
+            scores = ', '.join(["{:.2f}".format(s * 100) for s in scores])
+            result += "{} Nusc dist AP@{}\n".format(name, threshs)
+# =======
+#         res_path.unlink()  # delete results_nusc.json since it's very large
+#         result = f"Nusc {version} Evaluation\n"
+#         for name in mapped_class_names:
+#             detail[name] = {}
+#             for k, v in metrics["label_aps"][name].items():
+#                 detail[name][f"dist@{k}"] = v
+#             tp_errs = []
+#             tp_names = []
+#             for k, v in metrics["label_tp_errors"][name].items():
+#                 detail[name][k] = v
+#                 tp_errs.append(f"{v:.4f}")
+#                 tp_names.append(k)
+#             threshs = ', '.join(list(metrics["label_aps"][name].keys()))
+#             scores = list(metrics["label_aps"][name].values())
+#             scores = ', '.join([f"{s * 100:.2f}" for s in scores])
+#             result += f"{name} Nusc dist AP@{threshs} and TP errors\n"
+# >>>>>>> py2
             result += scores
             result += "\n"
             result += ', '.join(tp_names) + ": " + ', '.join(tp_errs)
@@ -660,12 +680,14 @@ def _fill_trainval_infos(nusc,
                 l2e_r_s_mat = Quaternion(l2e_r_s).rotation_matrix
                 e2g_r_s_mat = Quaternion(e2g_r_s).rotation_matrix
 
-                R = (l2e_r_s_mat.T @ e2g_r_s_mat.T) @ (
-                    np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
-                T = (l2e_t_s @ e2g_r_s_mat.T + e2g_t_s) @ (
-                    np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
-                T -= e2g_t @ (np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(
-                    l2e_r_mat).T) + l2e_t @ np.linalg.inv(l2e_r_mat).T
+                R = np.dot(
+                        np.dot(l2e_r_s_mat.T, e2g_r_s_mat.T),
+                        np.dot(np.linalg.inv(e2g_r_mat).T, np.linalg.inv(l2e_r_mat).T))
+                T = np.dot(
+                        np.dot(l2e_t_s, e2g_r_s_mat.T) + e2g_t_s,
+                        np.dot(np.linalg.inv(e2g_r_mat).T, np.linalg.inv(l2e_r_mat).T))
+                T -= np.dot(np.dot(e2g_t, np.dot(np.linalg.inv(e2g_r_mat).T, np.linalg.inv(
+                    l2e_r_mat).T)) + l2e_t, np.linalg.inv(l2e_r_mat).T)
                 sweep["sweep2lidar_rotation"] = R.T  # points @ R.T + T
                 sweep["sweep2lidar_translation"] = T
                 sweeps.append(sweep)
@@ -698,8 +720,7 @@ def _fill_trainval_infos(nusc,
             # we need to convert rot to SECOND format.
             # change the rot format will break all checkpoint, so...
             gt_boxes = np.concatenate([locs, dims, -rots - np.pi / 2], axis=1)
-            assert len(gt_boxes) == len(
-                annotations), f"{len(gt_boxes)}, {len(annotations)}"
+            assert len(gt_boxes) == len(annotations), "{}, {}".format(len(gt_boxes), len(annotations))
             info["gt_boxes"] = gt_boxes
             info["gt_names"] = names
             info["gt_velocity"] = velocity.reshape(-1, 2)
@@ -748,17 +769,17 @@ def create_nuscenes_infos(root_path, version="v1.0-trainval", max_sweeps=10):
         for s in val_scenes
     ])
     if test:
-        print(f"test scene: {len(train_scenes)}")
+        print("test scene: {}").format(len(train_scenes))
     else:
         print(
-            f"train scene: {len(train_scenes)}, val scene: {len(val_scenes)}")
+            "train scene: {}, val scene: {}".format(len(train_scenes, len(val_scenes))))
     train_nusc_infos, val_nusc_infos = _fill_trainval_infos(
         nusc, train_scenes, val_scenes, test, max_sweeps=max_sweeps)
     metadata = {
         "version": version,
     }
     if test:
-        print(f"test sample: {len(train_nusc_infos)}")
+        print("test sample: {}".format(len(train_nusc_infos)))
         data = {
             "infos": train_nusc_infos,
             "metadata": metadata,
@@ -767,7 +788,7 @@ def create_nuscenes_infos(root_path, version="v1.0-trainval", max_sweeps=10):
             pickle.dump(data, f)
     else:
         print(
-            f"train sample: {len(train_nusc_infos)}, val sample: {len(val_nusc_infos)}"
+            "train sample: {}, val sample: {}".format(len(train_nusc_infos), len(val_nusc_infos))
         )
         data = {
             "infos": train_nusc_infos,
@@ -799,7 +820,7 @@ def get_box_mean(info_path, class_name="vehicle.car",
         gt_boxes = gt_boxes[mask]
         gt_vels = gt_vels[mask]
         det_range = np.array([cls_range_map[n] for n in gt_names])
-        det_range = det_range[..., np.newaxis] @ np.array([[-1, -1, 1, 1]])
+        det_range = np.dot(det_range[..., np.newaxis], np.array([[-1, -1, 1, 1]]))
         mask = (gt_boxes[:, :2] >= det_range[:, :2]).all(1)
         mask &= (gt_boxes[:, :2] <= det_range[:, 2:]).all(1)
 
@@ -827,103 +848,108 @@ def get_all_box_mean(info_path):
     res = {}
     details = {}
     for k in det_names:
-        result = get_box_mean(info_path, k)
-        details[k] = result["detail"]
-        res[k] = result["box3d"]
-    print(json.dumps(res, indent=2))
-    return details
+# <<<<<<< oldstate
+        print("{}: ".format(k))
+        get_box_mean(info_path, k)
+# =======
+#         result = get_box_mean(info_path, k)
+#         details[k] = result["detail"]
+#         res[k] = result["box3d"]
+#     print(json.dumps(res, indent=2))
+#     return details
 
 
-def render_nusc_result(nusc, results, sample_token):
-    from nuscenes.utils.data_classes import Box
-    from pyquaternion import Quaternion
-    annos = results[sample_token]
-    sample = nusc.get("sample", sample_token)
-    sd_rec = nusc.get('sample_data', sample['data']["LIDAR_TOP"])
-    cs_record = nusc.get('calibrated_sensor',
-                         sd_rec['calibrated_sensor_token'])
-    pose_record = nusc.get('ego_pose', sd_rec['ego_pose_token'])
-    boxes = []
-    for anno in annos:
-        rot = Quaternion(anno["rotation"])
-        box = Box(
-            anno["translation"],
-            anno["size"],
-            rot,
-            name=anno["detection_name"])
-        box.translate(-np.array(pose_record['translation']))
-        box.rotate(Quaternion(pose_record['rotation']).inverse)
+# def render_nusc_result(nusc, results, sample_token):
+#     from nuscenes.utils.data_classes import Box
+#     from pyquaternion import Quaternion
+#     annos = results[sample_token]
+#     sample = nusc.get("sample", sample_token)
+#     sd_rec = nusc.get('sample_data', sample['data']["LIDAR_TOP"])
+#     cs_record = nusc.get('calibrated_sensor',
+#                          sd_rec['calibrated_sensor_token'])
+#     pose_record = nusc.get('ego_pose', sd_rec['ego_pose_token'])
+#     boxes = []
+#     for anno in annos:
+#         rot = Quaternion(anno["rotation"])
+#         box = Box(
+#             anno["translation"],
+#             anno["size"],
+#             rot,
+#             name=anno["detection_name"])
+#         box.translate(-np.array(pose_record['translation']))
+#         box.rotate(Quaternion(pose_record['rotation']).inverse)
 
-        #  Move box to sensor coord system
-        box.translate(-np.array(cs_record['translation']))
-        box.rotate(Quaternion(cs_record['rotation']).inverse)
+#         #  Move box to sensor coord system
+#         box.translate(-np.array(cs_record['translation']))
+#         box.rotate(Quaternion(cs_record['rotation']).inverse)
 
-        boxes.append(box)
-    nusc.explorer.render_sample_data(
-        sample["data"]["LIDAR_TOP"], extern_boxes=boxes, nsweeps=10)
-    nusc.explorer.render_sample_data(sample["data"]["LIDAR_TOP"], nsweeps=10)
+#         boxes.append(box)
+#     nusc.explorer.render_sample_data(
+#         sample["data"]["LIDAR_TOP"], extern_boxes=boxes, nsweeps=10)
+#     nusc.explorer.render_sample_data(sample["data"]["LIDAR_TOP"], nsweeps=10)
 
 
-def cluster_trailer_box(info_path, class_name="bus"):
-    with open(info_path, 'rb') as f:
-        nusc_infos = pickle.load(f)["infos"]
-    from nuscenes.eval.detection.config import eval_detection_configs
-    cls_range_map = eval_detection_configs["cvpr_2019"]["class_range"]
-    gt_boxes_list = []
-    for info in nusc_infos:
-        gt_boxes = info["gt_boxes"]
-        gt_names = info["gt_names"]
-        mask = np.array([s == class_name for s in info["gt_names"]],
-                        dtype=np.bool_)
-        gt_names = gt_names[mask]
-        gt_boxes = gt_boxes[mask]
-        det_range = np.array([cls_range_map[n] for n in gt_names])
-        det_range = det_range[..., np.newaxis] @ np.array([[-1, -1, 1, 1]])
-        mask = (gt_boxes[:, :2] >= det_range[:, :2]).all(1)
-        mask &= (gt_boxes[:, :2] <= det_range[:, 2:]).all(1)
+# def cluster_trailer_box(info_path, class_name="bus"):
+#     with open(info_path, 'rb') as f:
+#         nusc_infos = pickle.load(f)["infos"]
+#     from nuscenes.eval.detection.config import eval_detection_configs
+#     cls_range_map = eval_detection_configs["cvpr_2019"]["class_range"]
+#     gt_boxes_list = []
+#     for info in nusc_infos:
+#         gt_boxes = info["gt_boxes"]
+#         gt_names = info["gt_names"]
+#         mask = np.array([s == class_name for s in info["gt_names"]],
+#                         dtype=np.bool_)
+#         gt_names = gt_names[mask]
+#         gt_boxes = gt_boxes[mask]
+#         det_range = np.array([cls_range_map[n] for n in gt_names])
+#         det_range = det_range[..., np.newaxis] @ np.array([[-1, -1, 1, 1]])
+#         mask = (gt_boxes[:, :2] >= det_range[:, :2]).all(1)
+#         mask &= (gt_boxes[:, :2] <= det_range[:, 2:]).all(1)
 
-        gt_boxes_list.append(gt_boxes[mask].reshape(-1, 7))
-    gt_boxes_list = np.concatenate(gt_boxes_list, axis=0)
-    trailer_dims = gt_boxes_list[:, 3:6]
-    from sklearn.cluster import DBSCAN
-    from sklearn.preprocessing import StandardScaler
-    X = StandardScaler().fit_transform(trailer_dims)
-    db = DBSCAN(eps=0.3, min_samples=10).fit(X)
-    core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
-    core_samples_mask[db.core_sample_indices_] = True
-    labels = db.labels_
-    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-    n_noise_ = list(labels).count(-1)
-    print(n_clusters_, n_noise_)
-    print(trailer_dims)
+#         gt_boxes_list.append(gt_boxes[mask].reshape(-1, 7))
+#     gt_boxes_list = np.concatenate(gt_boxes_list, axis=0)
+#     trailer_dims = gt_boxes_list[:, 3:6]
+#     from sklearn.cluster import DBSCAN
+#     from sklearn.preprocessing import StandardScaler
+#     X = StandardScaler().fit_transform(trailer_dims)
+#     db = DBSCAN(eps=0.3, min_samples=10).fit(X)
+#     core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+#     core_samples_mask[db.core_sample_indices_] = True
+#     labels = db.labels_
+#     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+#     n_noise_ = list(labels).count(-1)
+#     print(n_clusters_, n_noise_)
+#     print(trailer_dims)
 
-    import matplotlib.pyplot as plt
-    unique_labels = set(labels)
-    colors = [
-        plt.cm.Spectral(each) for each in np.linspace(0, 1, len(unique_labels))
-    ]
-    for k, col in zip(unique_labels, colors):
-        if k == -1:
-            # Black used for noise.
-            col = [0, 0, 0, 1]
-        class_member_mask = (labels == k)
-        xy = trailer_dims[class_member_mask & core_samples_mask]
-        plt.plot(
-            xy[:, 0],
-            xy[:, 1],
-            'o',
-            markerfacecolor=tuple(col),
-            markeredgecolor='k',
-            markersize=14)
-        xy = trailer_dims[class_member_mask & ~core_samples_mask]
-        plt.plot(
-            xy[:, 0],
-            xy[:, 1],
-            'o',
-            markerfacecolor=tuple(col),
-            markeredgecolor='k',
-            markersize=6)
-    plt.show()
+#     import matplotlib.pyplot as plt
+#     unique_labels = set(labels)
+#     colors = [
+#         plt.cm.Spectral(each) for each in np.linspace(0, 1, len(unique_labels))
+#     ]
+#     for k, col in zip(unique_labels, colors):
+#         if k == -1:
+#             # Black used for noise.
+#             col = [0, 0, 0, 1]
+#         class_member_mask = (labels == k)
+#         xy = trailer_dims[class_member_mask & core_samples_mask]
+#         plt.plot(
+#             xy[:, 0],
+#             xy[:, 1],
+#             'o',
+#             markerfacecolor=tuple(col),
+#             markeredgecolor='k',
+#             markersize=14)
+#         xy = trailer_dims[class_member_mask & ~core_samples_mask]
+#         plt.plot(
+#             xy[:, 0],
+#             xy[:, 1],
+#             'o',
+#             markerfacecolor=tuple(col),
+#             markeredgecolor='k',
+#             markersize=6)
+#     plt.show()
+# >>>>>>> py2
 
 
 if __name__ == "__main__":

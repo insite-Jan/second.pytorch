@@ -1,3 +1,4 @@
+from __future__ import division
 from pathlib import Path
 import pickle
 import time
@@ -23,7 +24,7 @@ class KittiDataset(Dataset):
                  prep_func=None,
                  num_point_features=None):
         assert info_path is not None
-        with open(info_path, 'rb') as f:
+        with open(str(info_path), 'rb') as f:
             infos = pickle.load(f)
         self._root_path = Path(root_path)
         self._kitti_infos = infos
@@ -288,14 +289,14 @@ def kitti_anno_to_label_file(annos, folder):
             }
             label_line = kitti.kitti_result_line(label_dict)
             label_lines.append(label_line)
-        label_file = folder / f"{kitti.get_image_index_str(image_idx)}.txt"
+        label_file = folder / "{}.txt".format(kitti.get_image_index_str(image_idx))
         label_str = '\n'.join(label_lines)
-        with open(label_file, 'w') as f:
+        with open(str(label_file), 'w') as f:
             f.write(label_str)
 
 
 def _read_imageset_file(path):
-    with open(path, 'r') as f:
+    with open(str(path), 'r') as f:
         lines = f.readlines()
     return [int(line) for line in lines]
 
@@ -361,8 +362,8 @@ def create_kitti_info_file(data_path, save_path=None, relative_path=True):
         relative_path=relative_path)
     _calculate_num_points_in_gt(data_path, kitti_infos_train, relative_path)
     filename = save_path / 'kitti_infos_train.pkl'
-    print(f"Kitti info train file is saved to {filename}")
-    with open(filename, 'wb') as f:
+    print("Kitti info train file is saved to {}".format(filename))
+    with open(str(filename), 'wb') as f:
         pickle.dump(kitti_infos_train, f)
     kitti_infos_val = kitti.get_kitti_image_info(
         data_path,
@@ -373,12 +374,12 @@ def create_kitti_info_file(data_path, save_path=None, relative_path=True):
         relative_path=relative_path)
     _calculate_num_points_in_gt(data_path, kitti_infos_val, relative_path)
     filename = save_path / 'kitti_infos_val.pkl'
-    print(f"Kitti info val file is saved to {filename}")
-    with open(filename, 'wb') as f:
+    print("Kitti info val file is saved to {}".format(filename))
+    with open(str(filename), 'wb') as f:
         pickle.dump(kitti_infos_val, f)
     filename = save_path / 'kitti_infos_trainval.pkl'
-    print(f"Kitti info trainval file is saved to {filename}")
-    with open(filename, 'wb') as f:
+    print("Kitti info trainval file is saved to {}".format(filename))
+    with open(str(filename), 'wb') as f:
         pickle.dump(kitti_infos_train + kitti_infos_val, f)
 
     kitti_infos_test = kitti.get_kitti_image_info(
@@ -390,8 +391,8 @@ def create_kitti_info_file(data_path, save_path=None, relative_path=True):
         image_ids=test_img_ids,
         relative_path=relative_path)
     filename = save_path / 'kitti_infos_test.pkl'
-    print(f"Kitti info test file is saved to {filename}")
-    with open(filename, 'wb') as f:
+    print("Kitti info test file is saved to {}".format(filename))
+    with open(str(filename), 'wb') as f:
         pickle.dump(kitti_infos_test, f)
 
 
@@ -399,7 +400,7 @@ def _create_reduced_point_cloud(data_path,
                                 info_path,
                                 save_path=None,
                                 back=False):
-    with open(info_path, 'rb') as f:
+    with open(str(info_path), 'rb') as f:
         kitti_infos = pickle.load(f)
     for info in prog_bar(kitti_infos):
         pc_info = info["point_cloud"]
@@ -431,7 +432,7 @@ def _create_reduced_point_cloud(data_path,
             save_filename = str(Path(save_path) / v_path.name)
             if back:
                 save_filename += "_back"
-        with open(save_filename, 'w') as f:
+        with open(str(save_filename), 'w') as f:
             points_v.tofile(f)
 
 

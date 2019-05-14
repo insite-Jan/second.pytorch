@@ -1,3 +1,4 @@
+from __future__ import division
 import contextlib
 import enum
 from functools import partial
@@ -122,7 +123,7 @@ class QColorButton(QPushButton):
     Custom Qt Widget to show a chosen color.
 
     Left-clicking the button shows the color-chooser, while
-    right-clicking resets the color to None (no-color).    
+    right-clicking resets the color to None (no-color).
     '''
 
     colorChanged = pyqtSignal()
@@ -149,7 +150,7 @@ class QColorButton(QPushButton):
     @property
     def rgba(self):
         return self._color
-    
+
     @rgba.setter
     def rgba(self, value):
         self._color = value
@@ -220,7 +221,7 @@ class ControlPanel(QWidget):
             self._tab_layouts.append(from_layouts)
         self._widget_dict = {}
         self._widget_type = {}
-        
+
         self._current_col = 0
         self._current_tab = 0
         self._column_nums = column_nums
@@ -422,11 +423,9 @@ class ControlPanel(QWidget):
             if isinstance(value_dict[n], np.ndarray):
                 value_dict[n] = value_dict[n].tolist()
         return json.dumps(value_dict)
-    
+
     def loads(self, string):
         value_dict = json.loads(string)
         for n, w in self._widget_dict.items():
             if n in value_dict:
                 self.set(n, value_dict[n])
-
-

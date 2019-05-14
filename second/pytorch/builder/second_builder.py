@@ -14,6 +14,7 @@
 # ==============================================================================
 """VoxelNet builder.
 """
+from __future__ import division
 
 from second.protos import second_pb2
 from second.pytorch.builder import losses_builder

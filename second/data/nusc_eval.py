@@ -1,3 +1,4 @@
+from __future__ import division
 import fire 
 
 from nuscenes import NuScenes
@@ -9,7 +10,7 @@ def eval_main(root_path, version, eval_version, res_path, eval_set, output_dir):
         version=version, dataroot=str(root_path), verbose=False)
 
     cfg = config_factory(eval_version)
-    nusc_eval = NuScenesEval(nusc, config=cfg, result_path=res_path, eval_set=eval_set, 
+    nusc_eval = NuScenesEval(nusc, config=cfg, result_path=res_path, eval_set=eval_set,
                             output_dir=output_dir,
                             verbose=False)
     nusc_eval.main(render_curves=False)

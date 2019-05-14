@@ -9,6 +9,7 @@ Classification losses:
  * WeightedSoftmaxClassificationLoss
  * BootstrappedSigmoidClassificationLoss
 """
+from __future__ import division
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
@@ -141,7 +142,7 @@ class WeightedSmoothL1LocalizationLoss(Loss):
   See also Equation (3) in the Fast R-CNN paper by Ross Girshick (ICCV 2015)
   """
   def __init__(self, sigma=3.0, code_weights=None, codewise=True):
-    super().__init__()
+    super(WeightedSmoothL1LocalizationLoss, self).__init__()
     self._sigma = sigma
     if code_weights is not None:
       self._code_weights = np.array(code_weights, dtype=np.float32)
@@ -347,8 +348,8 @@ class SoftmaxFocalClassificationLoss(Loss):
       modulating_factor = torch.pow(1.0 - p_t, self._gamma)
     alpha_weight_factor = 1.0
     if self._alpha is not None:
-      alpha_weight_factor = torch.where(target_tensor[..., 0] == 1, 
-      torch.tensor(1 - self._alpha).type_as(per_entry_cross_ent), 
+      alpha_weight_factor = torch.where(target_tensor[..., 0] == 1,
+      torch.tensor(1 - self._alpha).type_as(per_entry_cross_ent),
       torch.tensor(self._alpha).type_as(per_entry_cross_ent))
     focal_cross_entropy_loss = (modulating_factor * alpha_weight_factor *
                                 per_entry_cross_ent)
@@ -449,4 +450,3 @@ class BootstrappedSigmoidClassificationLoss(Loss):
     per_entry_cross_ent = (_sigmoid_cross_entropy_with_logits(
         labels=bootstrap_target_tensor, logits=prediction_tensor))
     return per_entry_cross_ent * weights.unsqueeze(2)
-

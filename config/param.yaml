@@ -1,0 +1,5 @@
+# Configuration file for lidar cone detection via point_pillars
+# YAML
+
+lidar_point_pillars:
+  log_exec_time: True

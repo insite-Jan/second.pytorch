@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 from collections import OrderedDict
 
@@ -188,8 +189,8 @@ class TargetAssigner:
                 fsize = feature_map_size
                 self._feature_map_sizes[idx] = feature_map_size
             anchors = anchor_generator.generate(fsize)
-            anchors = anchors.reshape([*fsize, -1, self.box_ndim])
-            anchors = anchors.transpose(ndim, *range(0, ndim), ndim + 1)
+            anchors = anchors.reshape([*np.append(np.append(fsize, -1), self.box_ndim)])
+            anchors = anchors.transpose(*([ndim] + range(0, ndim) + [ndim + 1]))
             anchors_list.append(anchors.reshape(-1, self.box_ndim))
             num_anchors = np.prod(anchors.shape[:-1])
             match_list.append(
@@ -232,8 +233,8 @@ class TargetAssigner:
                 self._feature_map_sizes[idx] = feature_map_size
 
             anchors = anchor_generator.generate(fsize)
-            anchors = anchors.reshape([*fsize, -1, self.box_ndim])
-            anchors = anchors.transpose(ndim, *range(0, ndim), ndim + 1)
+            anchors = anchors.reshape([*np.append(np.append(fsize, -1), self.box_ndim)])
+            anchors = anchors.transpose(*([ndim] + range(0, ndim) + [ndim + 1]))
             num_anchors = np.prod(anchors.shape[:-1])
             match_list.append(
                 np.full([num_anchors], match_thresh, anchors.dtype))

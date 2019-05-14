@@ -1,3 +1,4 @@
+from __future__ import division
 
 import concurrent.futures as futures
 import os
@@ -162,7 +163,7 @@ def get_kitti_image_info(path,
                          relative_path=True,
                          with_imageshape=True):
     # image_infos = []
-    """ 
+    """
     KITTI annotation format version 2:
     {
         [optional]points: [N, 3+] point cloud
@@ -196,6 +197,7 @@ def get_kitti_image_info(path,
 
     def map_func(idx):
         info = {}
+
         pc_info = {'num_features': 4}
         calib_info = {}
 
@@ -225,16 +227,16 @@ def get_kitti_image_info(path,
             with open(calib_path, 'r') as f:
                 lines = f.readlines()
             P0 = np.array(
-                [float(info) for info in lines[0].split(' ')[1:13]]).reshape(
+                [float(infos) for infos in lines[0].split(' ')[1:13]]).reshape(
                     [3, 4])
             P1 = np.array(
-                [float(info) for info in lines[1].split(' ')[1:13]]).reshape(
+                [float(infos) for infos in lines[1].split(' ')[1:13]]).reshape(
                     [3, 4])
             P2 = np.array(
-                [float(info) for info in lines[2].split(' ')[1:13]]).reshape(
+                [float(infos) for infos in lines[2].split(' ')[1:13]]).reshape(
                     [3, 4])
             P3 = np.array(
-                [float(info) for info in lines[3].split(' ')[1:13]]).reshape(
+                [float(infos) for infos in lines[3].split(' ')[1:13]]).reshape(
                     [3, 4])
             if extend_matrix:
                 P0 = _extend_matrix(P0)
@@ -242,7 +244,7 @@ def get_kitti_image_info(path,
                 P2 = _extend_matrix(P2)
                 P3 = _extend_matrix(P3)
             R0_rect = np.array([
-                float(info) for info in lines[4].split(' ')[1:10]
+                float(infos) for infos in lines[4].split(' ')[1:10]
             ]).reshape([3, 3])
             if extend_matrix:
                 rect_4x4 = np.zeros([4, 4], dtype=R0_rect.dtype)
@@ -250,12 +252,12 @@ def get_kitti_image_info(path,
                 rect_4x4[:3, :3] = R0_rect
             else:
                 rect_4x4 = R0_rect
-            
+
             Tr_velo_to_cam = np.array([
-                float(info) for info in lines[5].split(' ')[1:13]
+                float(infos) for infos in lines[5].split(' ')[1:13]
             ]).reshape([3, 4])
             Tr_imu_to_velo = np.array([
-                float(info) for info in lines[6].split(' ')[1:13]
+                float(infos) for infos in lines[6].split(' ')[1:13]
             ]).reshape([3, 4])
             if extend_matrix:
                 Tr_velo_to_cam = _extend_matrix(Tr_velo_to_cam)
@@ -268,7 +270,7 @@ def get_kitti_image_info(path,
             calib_info['Tr_velo_to_cam'] = Tr_velo_to_cam
             calib_info['Tr_imu_to_velo'] = Tr_imu_to_velo
             info["calib"] = calib_info
-        
+
         if annotations is not None:
             info['annos'] = annotations
             add_difficulty_to_annos(info)

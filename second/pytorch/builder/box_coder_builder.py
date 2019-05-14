@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 
 from second.protos import box_coder_pb2
@@ -19,7 +20,7 @@ def build(box_coder_config):
     """
     box_coder_type = box_coder_config.WhichOneof('box_coder')
     if box_coder_type == 'ground_box3d_coder':
-        cfg = box_coder_config.ground_box3d_coder
+        cfg = box_coder_config.bev_box_coder
         return GroundBox3dCoderTorch(cfg.linear_dim, cfg.encode_angle_vector)
     elif box_coder_type == 'bev_box_coder':
         cfg = box_coder_config.bev_box_coder

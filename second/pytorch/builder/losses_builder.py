@@ -14,6 +14,7 @@
 # ==============================================================================
 
 """A function to build localization and classification losses from config."""
+from __future__ import division
 
 from second.pytorch.core import losses
 from second.pytorch.core.ghm_loss import GHMCLoss, GHMRLoss
@@ -99,7 +100,7 @@ def _build_localization_loss(loss_config):
     raise ValueError('loss_config not of type losses_pb2.LocalizationLoss.')
 
   loss_type = loss_config.WhichOneof('localization_loss')
-  
+
   if loss_type == 'weighted_l2':
     config = loss_config.weighted_l2
     if len(config.code_weight) == 0:

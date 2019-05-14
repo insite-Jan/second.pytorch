@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 from collections import OrderedDict
 
@@ -85,7 +86,7 @@ class TargetAssigner:
             feature_map_size = anchor_dict["anchors"].shape[:3]
             num_loc = anchor_dict["anchors"].shape[-2]
             if anchors_mask is not None:
-                anchors_mask = anchors_mask.reshape(*feature_map_size, -1)
+                anchors_mask = anchors_mask.reshape(*(feature_map_size + tuple([-1])))
                 anchors_mask_class = anchors_mask[
                     ..., anchor_loc_idx:anchor_loc_idx + num_loc].reshape(-1)
                 prune_anchor_fn = lambda _: np.where(anchors_mask_class)[0]
@@ -115,17 +116,17 @@ class TargetAssigner:
             [t["bbox_outside_weights"] for t in targets_list],
         }
         targets_dict["bbox_targets"] = np.concatenate([
-            v.reshape(*feature_map_size, -1, self.box_coder.code_size)
+            v.reshape(*np.append(np.append(feature_map_size, -1), self.box_coder.code_size))
             for v in targets_dict["bbox_targets"]
         ],
                                                       axis=-2)
         targets_dict["bbox_targets"] = targets_dict["bbox_targets"].reshape(
             -1, self.box_coder.code_size)
         targets_dict["labels"] = np.concatenate(
-            [v.reshape(*feature_map_size, -1) for v in targets_dict["labels"]],
+            [v.reshape(*np.append(feature_map_size, -1)) for v in targets_dict["labels"]],
             axis=-1)
         targets_dict["bbox_outside_weights"] = np.concatenate([
-            v.reshape(*feature_map_size, -1)
+            v.reshape(*np.append(feature_map_size, -1))
             for v in targets_dict["bbox_outside_weights"]
         ],
                                                               axis=-1)
@@ -148,7 +149,7 @@ class TargetAssigner:
                 self._anchor_generators, matched_thresholds,
                 unmatched_thresholds):
             anchors = anchor_generator.generate(feature_map_size)
-            anchors = anchors.reshape([*anchors.shape[:3], -1, 7])
+            anchors = anchors.reshape(np.append(np.append(anchors.shape[:3], -1), 7))
             anchors_list.append(anchors)
             num_anchors = np.prod(anchors.shape[:-1])
             match_list.append(
@@ -180,7 +181,7 @@ class TargetAssigner:
                 self._anchor_generators, matched_thresholds,
                 unmatched_thresholds):
             anchors = anchor_generator.generate(feature_map_size)
-            anchors = anchors.reshape([*anchors.shape[:3], -1, 7])
+            anchors = anchors.reshape(np.append(np.append(anchors.shape[:3], -1), 7))
             anchors_list.append(anchors)
             num_anchors = np.prod(anchors.shape[:-1])
             match_list.append(

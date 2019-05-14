@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 import io as sysio
 import time
 
@@ -9,7 +11,7 @@ from second.core.non_max_suppression.nms_gpu import rotate_iou_gpu_eval
 from second.core import box_np_ops
 
 @numba.jit
-def get_thresholds(scores: np.ndarray, num_gt, num_sample_pts=41):
+def get_thresholds(scores, num_gt, num_sample_pts=41):
     scores.sort()
     scores = scores[::-1]
     current_recall = 0
@@ -362,7 +364,7 @@ def calculate_iou_partly(gt_annos,
                          z_axis=1,
                          z_center=1.0):
     """fast iou algorithm. this function can be used independently to
-    do result analysis. 
+    do result analysis.
     Args:
         gt_annos: dict, must from get_label_annos() in kitti_common.py
         dt_annos: dict, must from get_label_annos() in kitti_common.py
@@ -489,8 +491,8 @@ def eval_class_v3(gt_annos,
         current_class: int, 0: car, 1: pedestrian, 2: cyclist
         difficulty: int. eval difficulty, 0: easy, 1: normal, 2: hard
         metric: eval type. 0: bbox, 1: bev, 2: 3d
-        min_overlap: float, min overlap. official: 
-            [[0.7, 0.5, 0.5], [0.7, 0.5, 0.5], [0.7, 0.5, 0.5]] 
+        min_overlap: float, min overlap. official:
+            [[0.7, 0.5, 0.5], [0.7, 0.5, 0.5], [0.7, 0.5, 0.5]]
             format: [metric, class]. choose one from matrix above.
         num_parts: int. a parameter for fast calculate algorithm
 
@@ -694,7 +696,7 @@ def do_coco_style_eval(gt_annos,
                        z_axis=1,
                        z_center=1.0):
     # overlap_ranges: [range, metric, num_class]
-    min_overlaps = np.zeros([10, *overlap_ranges.shape[1:]])
+    min_overlaps = np.zeros((10,) + overlap_ranges.shape[1:])
     for i in range(overlap_ranges.shape[1]):
         for j in range(overlap_ranges.shape[2]):
             min_overlaps[:, i, j] = np.linspace(*overlap_ranges[:, i, j])
@@ -715,13 +717,16 @@ def do_coco_style_eval(gt_annos,
     return mAP_bbox, mAP_bev, mAP_3d, mAP_aos
 
 
-def print_str(value, *arg, sstream=None):
-    if sstream is None:
-        sstream = sysio.StringIO()
-    sstream.truncate(0)
-    sstream.seek(0)
-    print(value, *arg, file=sstream)
-    return sstream.getvalue()
+def print_str(*args):
+    # if sstream is None:
+    #     sstream = sysio.StringIO()
+    # sstream.truncate(0)
+    # sstream.seek(0)
+    #p3 only
+    # print(value, *arg, file=sstream)
+    for value in args:
+        print(value)
+    return "\n"+"\n".join(args)
 
 def get_official_eval_result(gt_annos,
                              dt_annos,
@@ -755,6 +760,10 @@ def get_official_eval_result(gt_annos,
         current_classes = [current_classes]
     current_classes_int = []
     for curcls in current_classes:
+        # print(curcls)
+        # print(type(curcls))
+        if isinstance(curcls, unicode):
+            curcls = str(curcls)
         if isinstance(curcls, str):
             current_classes_int.append(name_to_class[curcls])
         else:
@@ -788,24 +797,24 @@ def get_official_eval_result(gt_annos,
             mAPbbox = get_mAP(metrics["bbox"]["precision"][j, :, i])
             mAPbev = get_mAP(metrics["bev"]["precision"][j, :, i])
             mAP3d = get_mAP(metrics["3d"]["precision"][j, :, i])
-            detail[class_name][f"bbox@{min_overlaps[i, 0, j]:.2f}"] = mAPbbox.tolist()
-            detail[class_name][f"bev@{min_overlaps[i, 1, j]:.2f}"] = mAPbev.tolist()
-            detail[class_name][f"3d@{min_overlaps[i, 2, j]:.2f}"] = mAP3d.tolist()
+            detail[class_name]["bbox@{:.2f}".format(min_overlaps[i, 0, j])] = mAPbbox.tolist()
+            detail[class_name]["bev@{:.2f}".format(min_overlaps[i, 1, j])] = mAPbev.tolist()
+            detail[class_name]["3d@{:.2f}".format(min_overlaps[i, 2, j])] = mAP3d.tolist()
 
             result += print_str(
-                (f"{class_to_name[curcls]} "
-                 "AP(Average Precision)@{:.2f}, {:.2f}, {:.2f}:".format(*min_overlaps[i, :, j])))
-            mAPbbox = ", ".join(f"{v:.2f}" for v in mAPbbox)
-            mAPbev = ", ".join(f"{v:.2f}" for v in mAPbev)
-            mAP3d = ", ".join(f"{v:.2f}" for v in mAP3d)
-            result += print_str(f"bbox AP:{mAPbbox}")
-            result += print_str(f"bev  AP:{mAPbev}")
-            result += print_str(f"3d   AP:{mAP3d}")
+                "{} ".format(class_to_name[curcls]),
+                 "AP(Average Precision)@{:.2f}, {:.2f}, {:.2f}:".format(*min_overlaps[i, :, j]))
+            mAPbbox = ", ".join("{:.2f}".format(v) for v in mAPbbox)
+            mAPbev = ", ".join("{:.2f}".format(v) for v in mAPbev)
+            mAP3d = ", ".join("{:.2f}".format(v) for v in mAP3d)
+            result += print_str("bbox AP:{}".format(mAPbbox))
+            result += print_str("bev  AP:{}".format(mAPbev))
+            result += print_str("3d   AP:{}".format(mAP3d))
             if compute_aos:
                 mAPaos = get_mAP(metrics["bbox"]["orientation"][j, :, i])
-                detail[class_name][f"aos"] = mAPaos.tolist()
-                mAPaos = ", ".join(f"{v:.2f}" for v in mAPaos)
-                result += print_str(f"aos  AP:{mAPaos}")
+                detail[class_name]["aos"] = mAPaos.tolist()
+                mAPaos = ", ".join("{:.2f}".format(v) for v in mAPaos)
+                result += print_str("aos  AP:{}".format(mAPaos))
     return {
         "result": result,
         "detail": detail,
@@ -853,6 +862,8 @@ def get_coco_eval_result(gt_annos,
         current_classes = [current_classes]
     current_classes_int = []
     for curcls in current_classes:
+        if isinstance(curcls, unicode):
+            curcls = str(curcls)
         if isinstance(curcls, str):
             current_classes_int.append(name_to_class[curcls])
         else:
@@ -886,26 +897,26 @@ def get_coco_eval_result(gt_annos,
         # mAP result: [num_class, num_diff, num_minoverlap]
         o_range = np.array(class_to_range[curcls])[[0, 2, 1]]
         o_range[1] = (o_range[2] - o_range[0]) / (o_range[1] - 1)
-        result += print_str((f"{class_to_name[curcls]} "
-                             "coco AP@{:.2f}:{:.2f}:{:.2f}:".format(*o_range)))
-        result += print_str((f"bbox AP:{mAPbbox[j, 0]:.2f}, "
-                             f"{mAPbbox[j, 1]:.2f}, "
-                             f"{mAPbbox[j, 2]:.2f}"))
-        result += print_str((f"bev  AP:{mAPbev[j, 0]:.2f}, "
-                             f"{mAPbev[j, 1]:.2f}, "
-                             f"{mAPbev[j, 2]:.2f}"))
-        result += print_str((f"3d   AP:{mAP3d[j, 0]:.2f}, "
-                             f"{mAP3d[j, 1]:.2f}, "
-                             f"{mAP3d[j, 2]:.2f}"))
-        detail[class_name][f"bbox"] = mAPbbox[j].tolist()
-        detail[class_name][f"bev"] = mAPbev[j].tolist()
-        detail[class_name][f"3d"] = mAP3d[j].tolist()
+        result += print_str("{} ".format(class_to_name[curcls]),
+                             "coco AP@{:.2f}:{:.2f}:{:.2f}:".format(*o_range))
+        result += print_str("bbox AP:{:.2f}, ".format(mAPbbox[j, 0])+
+                             "{:.2f}, ".format(mAPbbox[j, 1])+
+                             "{:.2f}".format(mAPbbox[j, 2]))
+        result += print_str("bev  AP:{:.2f}, ".format(mAPbev[j, 0])+
+                             "{:.2f}, ".format(mAPbev[j, 1])+
+                             "{:.2f}".format(mAPbev[j, 2]))
+        result += print_str("3d   AP:{:.2f}, ".format(mAP3d[j, 0])+
+                             "{:.2f}, ".format(mAP3d[j, 1])+
+                             "{:.2f}".format(mAP3d[j, 2]))
+        detail[class_name]["bbox"] = mAPbbox[j].tolist()
+        detail[class_name]["bev"] = mAPbev[j].tolist()
+        detail[class_name]["3d"] = mAP3d[j].tolist()
 
         if compute_aos:
-            detail[class_name][f"aos"] = mAPaos[j].tolist()
-            result += print_str((f"aos  AP:{mAPaos[j, 0]:.2f}, "
-                                 f"{mAPaos[j, 1]:.2f}, "
-                                 f"{mAPaos[j, 2]:.2f}"))
+            detail[class_name]["aos"] = mAPaos[j].tolist()
+            result += print_str("aos  AP:{:.2f}, ".format(mAPaos[j, 0])+
+                                 "{:.2f}, ".format(mAPaos[j, 1])+
+                                 "{:.2f}".format(mAPaos[j, 2]))
     return {
         "result": result,
         "detail": detail,

@@ -9,6 +9,7 @@ Classification losses:
  * WeightedSoftmaxClassificationLoss
  * BootstrappedSigmoidClassificationLoss
 """
+from __future__ import division
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
@@ -141,11 +142,11 @@ class WeightedSmoothL1LocalizationLoss(Loss):
   See also Equation (3) in the Fast R-CNN paper by Ross Girshick (ICCV 2015)
   """
   def __init__(self, sigma=3.0, code_weights=None, codewise=True):
-    super().__init__()
+    super(WeightedSmoothL1LocalizationLoss, self).__init__()
     self._sigma = sigma
     if code_weights is not None:
       self._code_weights = np.array(code_weights, dtype=np.float32)
-      self._code_weights = Variable(torch.from_numpy(self._code_weights).cuda())
+      self._code_weights = torch.from_numpy(self._code_weights)
     else:
       self._code_weights = None
     self._codewise = codewise
@@ -165,7 +166,7 @@ class WeightedSmoothL1LocalizationLoss(Loss):
     """
     diff = prediction_tensor - target_tensor
     if self._code_weights is not None:
-      code_weights = self._code_weights.type_as(prediction_tensor)
+      code_weights = self._code_weights.type_as(prediction_tensor).to(target_tensor.device)
       diff = code_weights.view(1, 1, -1) * diff
     abs_diff = torch.abs(diff)
     abs_diff_lt_1 = torch.le(abs_diff, 1 / (self._sigma**2)).type_as(abs_diff)
@@ -346,8 +347,8 @@ class SoftmaxFocalClassificationLoss(Loss):
       modulating_factor = torch.pow(1.0 - p_t, self._gamma)
     alpha_weight_factor = 1.0
     if self._alpha is not None:
-      alpha_weight_factor = torch.where(target_tensor[..., 0] == 1, 
-      torch.tensor(1 - self._alpha).type_as(per_entry_cross_ent), 
+      alpha_weight_factor = torch.where(target_tensor[..., 0] == 1,
+      torch.tensor(1 - self._alpha).type_as(per_entry_cross_ent),
       torch.tensor(self._alpha).type_as(per_entry_cross_ent))
     focal_cross_entropy_loss = (modulating_factor * alpha_weight_factor *
                                 per_entry_cross_ent)
@@ -448,4 +449,3 @@ class BootstrappedSigmoidClassificationLoss(Loss):
     per_entry_cross_ent = (_sigmoid_cross_entropy_with_logits(
         labels=bootstrap_target_tensor, logits=prediction_tensor))
     return per_entry_cross_ent * weights.unsqueeze(2)
-

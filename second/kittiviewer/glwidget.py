@@ -1,3 +1,4 @@
+from __future__ import division
 from enum import Enum
 
 import numpy as np
@@ -24,11 +25,11 @@ class GLLabelItem(GLGraphicsItem):
         self.text = text
         self.pos = pos
         self.font = font
-        
+
 
     def setGLViewWidget(self, GLViewWidget):
         self.GLViewWidget = GLViewWidget
-    
+
     def setData(self, pos, text, color, font):
         self.text = text
         self.pos = pos
@@ -87,7 +88,7 @@ def _pltcolor_to_qtcolor(color):
 
 def _glcolor_to_qtcolor(glcolor):
     color = np.array(gl_color(glcolor)) * 255
-    return QtGui.QColor(*color.astype(np.int32)) 
+    return QtGui.QColor(*color.astype(np.int32))
 
 def get_rotation_matrix_3d(angle, axis=0):
     # points: [N, point_size, 3]
@@ -199,14 +200,14 @@ class KittiGLViewWidget(gl.GLViewWidget):
                 width=1.0, antialias=True):
         # if isinstance(colors, tuple):
         #     colors = gl_color(colors, alphas)
-        
+
         if not isinstance(radiuses, (list, tuple, np.ndarray)):
             assert isinstance(poses, (list, tuple, np.ndarray))
             radiuses = np.full([len(poses)], radiuses)
         lines_list = []
         for pos, radius in zip(poses, radiuses):
             lines = get_lines_for_circle(radius, num_points)
-            
+
             shape = [lines.shape[0], 2, 1]
             lines_with_z = np.concatenate([lines, np.full(shape, pos[-1])], axis=-1)
             lines_list.append(lines_with_z)

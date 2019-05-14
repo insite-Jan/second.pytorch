@@ -8,7 +8,7 @@ class LRSchedulerStep(object):
         self.optimizer = fai_optimizer
         self.total_step = total_step
         self.lr_phases = []
-        
+
         for i, (start, lambda_func) in enumerate(lr_phases):
             if len(self.lr_phases) != 0:
                 assert self.lr_phases[-1][0] < int(start * total_step)
@@ -20,7 +20,7 @@ class LRSchedulerStep(object):
                 self.lr_phases.append((int(start * total_step), total_step, lambda_func))
         assert self.lr_phases[0][0] == 0
         self.mom_phases = []
-        
+
         for i, (start, lambda_func) in enumerate(mom_phases):
             if len(self.mom_phases) != 0:
                 assert self.mom_phases[-1][0] < int(start * total_step)
@@ -71,14 +71,14 @@ class OneCycle(LRSchedulerStep):
                       (self.pct_start, partial(annealing_cos,
                                                *self.moms[::-1])))
         fai_optimizer.lr, fai_optimizer.mom = low_lr, self.moms[0]
-        super().__init__(fai_optimizer, total_step, lr_phases, mom_phases)
+        super(OneCycle, self).__init__(fai_optimizer, total_step, lr_phases, mom_phases)
 
 class ExponentialDecay(LRSchedulerStep):
     def __init__(self,
-                 fai_optimizer, 
+                 fai_optimizer,
                  total_step,
                  initial_learning_rate,
-                 decay_length, 
+                 decay_length,
                  decay_factor,
                  staircase=True):
         """
@@ -102,11 +102,11 @@ class ExponentialDecay(LRSchedulerStep):
         else:
             func = lambda p: pow(decay_factor, (p / decay_length))
             lr_phases.append((0, func))
-        super().__init__(fai_optimizer, total_step, lr_phases, [])
+        super(ExponentialDecay, self).__init__(fai_optimizer, total_step, lr_phases, [])
 
 class ManualStepping(LRSchedulerStep):
     def __init__(self,
-                 fai_optimizer, 
+                 fai_optimizer,
                  total_step,
                  boundaries,
                  rates):
@@ -117,7 +117,7 @@ class ManualStepping(LRSchedulerStep):
         for start, rate in zip(boundaries, rates):
             func = lambda p, _d=rate: _d
             lr_phases.append((start, func))
-        super().__init__(fai_optimizer, total_step, lr_phases, [])
+        super(ManualStepping, self).__init__(fai_optimizer, total_step, lr_phases, [])
 
 
 class FakeOptim:
@@ -137,7 +137,7 @@ if __name__ == "__main__":
         schd.step(i)
         lrs.append(opt.lr)
         moms.append(opt.mom)
-    
+
     plt.plot(lrs)
     # plt.plot(moms)
     # plt.show()

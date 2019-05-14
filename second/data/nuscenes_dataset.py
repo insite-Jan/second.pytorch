@@ -1,3 +1,4 @@
+from __future__ import division
 import json
 import pickle
 import time
@@ -86,7 +87,7 @@ class NuScenesDataset(Dataset):
             num_lidar_pts = num_lidar_pts[mask]
             gt_names_mapped = [self._kitti_name_mapping[n] for n in gt_names]
             det_range = np.array([cls_range_map[n] for n in gt_names_mapped])
-            det_range = det_range[..., np.newaxis] @ np.array([[-1, -1, 1, 1]])
+            det_range = np.dot(det_range[..., np.newaxis], np.array([[-1, -1, 1, 1]]))
             mask = (gt_boxes[:, :2] >= det_range[:, :2]).all(1)
             mask &= (gt_boxes[:, :2] <= det_range[:, 2:]).all(1)
             gt_names = gt_names[mask]
@@ -154,21 +155,21 @@ class NuScenesDataset(Dataset):
         points[:, 4] = 0
         sweep_points_list = [points]
         ts = info["timestamp"] / 1e6
-        
+
         for sweep in info["sweeps"]:
             points_sweep = np.fromfile(
                 str(sweep["lidar_path"]), dtype=np.float32,
                 count=-1).reshape([-1, 5])
             sweep_ts = sweep["timestamp"] / 1e6
             points_sweep[:, 3] /= 255
-            points_sweep[:, :3] = points_sweep[:, :3] @ sweep[
-                "sweep2lidar_rotation"].T
+            points_sweep[:, :3] = np.dot(points_sweep[:, :3], sweep[
+                "sweep2lidar_rotation"].T)
             points_sweep[:, :3] += sweep["sweep2lidar_translation"]
             points_sweep[:, 4] = ts - sweep_ts
             sweep_points_list.append(points_sweep)
-        
+
         points = np.concatenate(sweep_points_list, axis=0)[:, [0, 1, 2, 4]]
-        
+
         if read_test_image:
             if Path(info["cam_front_path"]).exists():
                 with open(str(info["cam_front_path"]), 'rb') as f:
@@ -319,24 +320,24 @@ class NuScenesDataset(Dataset):
             json.dump(nusc_annos, f)
         eval_main_file = Path(__file__).resolve().parent / "nusc_eval.py"
         # why add \"{}\"? to support path with spaces.
-        cmd = f"python {str(eval_main_file)} --root_path=\"{str(self._root_path)}\""
-        cmd += f" --version={self.version} --eval_version={self.eval_version}"
-        cmd += f" --res_path=\"{res_path}\" --eval_set={eval_set_map[self.version]}"
-        cmd += f" --output_dir=\"{output_dir}\""
+        cmd = "python {} --root_path=\"{}\"".format(str(eval_main_file), str(self._root_path))
+        cmd += " --version={} --eval_version={}".format(self.version, self.eval_version)
+        cmd += " --res_path=\"{}\" --eval_set={}".format(res_path, eval_set_map[self.version])
+        cmd += " --output_dir=\"{}\"".format(output_dir)
         # use subprocess can release all nusc memory after evaluation
         subprocess.check_output(cmd, shell=True)
         with open(Path(output_dir) / "metrics.json", "r") as f:
             metrics = json.load(f)
         detail = {}
-        result = f"Nusc {version} Evaluation\n"
+        result = "Nusc {} Evaluation\n".format(version)
         for name in mapped_class_names:
             detail[name] = {}
             for k, v in metrics["label_aps"][name].items():
-                detail[name][f"dist@{k}"] = v
+                detail[name]["dist@{}".format(k)] = v
             threshs = ', '.join(list(metrics["label_aps"][name].keys()))
             scores = list(metrics["label_aps"][name].values())
-            scores = ', '.join([f"{s * 100:.2f}" for s in scores])
-            result += f"{name} Nusc dist AP@{threshs}\n"
+            scores = ', '.join(["{:.2f}".format(s * 100) for s in scores])
+            result += "{} Nusc dist AP@{}\n".format(name, threshs)
             result += scores
             result += "\n"
         return {
@@ -447,7 +448,7 @@ def _fill_trainval_infos(nusc,
                              sd_rec['calibrated_sensor_token'])
         pose_record = nusc.get('ego_pose', sd_rec['ego_pose_token'])
         lidar_path, boxes, _ = nusc.get_sample_data(lidar_token)
-        
+
         cam_path, _, cam_intrinsic = nusc.get_sample_data(cam_front_token)
         assert Path(lidar_path).exists(), "you must download all trainval data."
         info = {
@@ -495,12 +496,14 @@ def _fill_trainval_infos(nusc,
                 l2e_r_s_mat = Quaternion(l2e_r_s).rotation_matrix
                 e2g_r_s_mat = Quaternion(e2g_r_s).rotation_matrix
 
-                R = (l2e_r_s_mat.T @ e2g_r_s_mat.T) @ (
-                    np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
-                T = (l2e_t_s @ e2g_r_s_mat.T + e2g_t_s) @ (
-                    np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(l2e_r_mat).T)
-                T -= e2g_t @ (np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(
-                    l2e_r_mat).T) + l2e_t @ np.linalg.inv(l2e_r_mat).T
+                R = np.dot(
+                        np.dot(l2e_r_s_mat.T, e2g_r_s_mat.T),
+                        np.dot(np.linalg.inv(e2g_r_mat).T, np.linalg.inv(l2e_r_mat).T))
+                T = np.dot(
+                        np.dot(l2e_t_s, e2g_r_s_mat.T) + e2g_t_s,
+                        np.dot(np.linalg.inv(e2g_r_mat).T, np.linalg.inv(l2e_r_mat).T))
+                T -= np.dot(np.dot(e2g_t, np.dot(np.linalg.inv(e2g_r_mat).T, np.linalg.inv(
+                    l2e_r_mat).T)) + l2e_t, np.linalg.inv(l2e_r_mat).T)
                 sweep["sweep2lidar_rotation"] = R.T  # points @ R.T + T
                 sweep["sweep2lidar_translation"] = T
                 sweeps.append(sweep)
@@ -519,7 +522,7 @@ def _fill_trainval_infos(nusc,
                     names[i] = NuScenesDataset.NameMapping[names[i]]
             names = np.array(names)
             gt_boxes = np.concatenate([locs, dims, -rots - np.pi / 2], axis=1)
-            assert len(gt_boxes) == len(annotations), f"{len(gt_boxes)}, {len(annotations)}"
+            assert len(gt_boxes) == len(annotations), "{}, {}".format(len(gt_boxes), len(annotations))
             info["gt_boxes"] = gt_boxes
             info["gt_names"] = names
             info["num_lidar_pts"] = np.array([a["num_lidar_pts"] for a in annotations])
@@ -564,17 +567,17 @@ def create_nuscenes_infos(root_path, version="v1.0-trainval", max_sweeps=10):
         for s in val_scenes
     ])
     if test:
-        print(f"test scene: {len(train_scenes)}")
+        print("test scene: {}").format(len(train_scenes))
     else:
         print(
-            f"train scene: {len(train_scenes)}, val scene: {len(val_scenes)}")
+            "train scene: {}, val scene: {}".format(len(train_scenes, len(val_scenes))))
     train_nusc_infos, val_nusc_infos = _fill_trainval_infos(
         nusc, train_scenes, val_scenes, test, max_sweeps=max_sweeps)
     metadata = {
         "version": version,
     }
     if test:
-        print(f"test sample: {len(train_nusc_infos)}")
+        print("test sample: {}".format(len(train_nusc_infos)))
         data = {
             "infos": train_nusc_infos,
             "metadata": metadata,
@@ -583,7 +586,7 @@ def create_nuscenes_infos(root_path, version="v1.0-trainval", max_sweeps=10):
             pickle.dump(data, f)
     else:
         print(
-            f"train sample: {len(train_nusc_infos)}, val sample: {len(val_nusc_infos)}"
+            "train sample: {}, val sample: {}".format(len(train_nusc_infos), len(val_nusc_infos))
         )
         data = {
             "infos": train_nusc_infos,
@@ -612,7 +615,7 @@ def get_box_mean(info_path, class_name="vehicle.car", eval_version="cvpr_2019"):
         gt_names = gt_names[mask]
         gt_boxes = gt_boxes[mask]
         det_range = np.array([cls_range_map[n] for n in gt_names])
-        det_range = det_range[..., np.newaxis] @ np.array([[-1, -1, 1, 1]])
+        det_range = np.dot(det_range[..., np.newaxis], np.array([[-1, -1, 1, 1]]))
         mask = (gt_boxes[:, :2] >= det_range[:, :2]).all(1)
         mask &= (gt_boxes[:, :2] <= det_range[:, 2:]).all(1)
 
@@ -626,7 +629,7 @@ def get_all_box_mean(info_path):
         if v not in det_names:
             det_names.add(v)
     for k in det_names:
-        print(f"{k}: ")
+        print("{}: ".format(k))
         get_box_mean(info_path, k)
 
 

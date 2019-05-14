@@ -1,3 +1,4 @@
+from __future__ import division
 import math
 from functools import reduce
 
@@ -157,15 +158,15 @@ def bev_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smooth_
 
 def corners_nd(dims, origin=0.5):
     """generate relative box corners based on length per dim and
-    origin point. 
-    
+    origin point.
+
     Args:
         dims (float array, shape=[N, ndim]): array of length per dim
         origin (list or array or float): origin point relate to smallest point.
-        dtype (output dtype, optional): Defaults to np.float32 
-    
+        dtype (output dtype, optional): Defaults to np.float32
+
     Returns:
-        float array, shape=[N, 2 ** ndim, ndim]: returned corners. 
+        float array, shape=[N, 2 ** ndim, ndim]: returned corners.
         point layout example: (2d) x0y0, x0y1, x1y0, x1y1;
             (3d) x0y0z0, x0y0z1, x0y1z0, x0y1z1, x1y0z0, x1y0z1, x1y1z0, x1y1z1
             where x0 < x1, y0 < y1, z0 < z1
@@ -195,14 +196,14 @@ def corners_nd(dims, origin=0.5):
 def corners_2d(dims, origin=0.5):
     """generate relative 2d box corners based on length per dim and
     origin point.
-    
+
     Args:
         dims (float array, shape=[N, 2]): array of length per dim
         origin (list or array or float): origin point relate to smallest point.
-        dtype (output dtype, optional): Defaults to np.float32 
-    
+        dtype (output dtype, optional): Defaults to np.float32
+
     Returns:
-        float array, shape=[N, 4, 2]: returned corners. 
+        float array, shape=[N, 4, 2]: returned corners.
         point layout: x0y0, x0y1, x1y1, x1y0
     """
     return corners_nd(dims, origin)
@@ -274,12 +275,12 @@ def rotation_points_single_angle(points, angle, axis=0):
         ])
     else:
         raise ValueError("axis should in range")
-    return points @ rot_mat_T
+    return np.dot(points, rot_mat_T)
 
 
 def rotation_2d(points, angles):
     """rotation 2d points based on origin point clockwise when angle positive.
-    
+
     Args:
         points (float array, shape=[N, point_size, 2]): points to be rotated.
         angles (float array, shape=[N]): rotation angle.
@@ -301,7 +302,7 @@ def center_to_corner_box3d(centers,
                            origin=(0.5, 0.5, 0.5),
                            axis=1):
     """convert kitti locations, dimensions and angles to corners
-    
+
     Args:
         centers (float array, shape=[N, 3]): locations in kitti label file.
         dims (float array, shape=[N, 3]): dimensions in kitti label file.
@@ -324,12 +325,12 @@ def center_to_corner_box3d(centers,
 
 def center_to_corner_box2d(centers, dims, angles=None, origin=0.5):
     """convert kitti locations, dimensions and angles to corners
-    
+
     Args:
         centers (float array, shape=[N, 2]): locations in kitti label file.
         dims (float array, shape=[N, 2]): dimensions in kitti label file.
         angles (float array, shape=[N]): rotation_y in kitti label file.
-    
+
     Returns:
         [type]: [description]
     """
@@ -358,7 +359,7 @@ def camera_to_lidar(points, r_rect, velo2cam):
     num_points = points.shape[0]
     points = torch.cat(
         [points, torch.ones(num_points, 1).type_as(points)], dim=-1)
-    lidar_points = points @ torch.inverse((r_rect @ velo2cam).t())
+    lidar_points = np.dot(points, torch.inverse(np.dot(r_rect, velo2cam).t()))
     return lidar_points[..., :3]
 
 
@@ -366,7 +367,7 @@ def lidar_to_camera(points, r_rect, velo2cam):
     num_points = points.shape[0]
     points = torch.cat(
         [points, torch.ones(num_points, 1).type_as(points)], dim=-1)
-    camera_points = points @ (r_rect @ velo2cam).t()
+    camera_points = np.dot(points, np.dot(r_rect, velo2cam).t())
     return camera_points[..., :3]
 
 

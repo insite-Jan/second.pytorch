@@ -1,3 +1,4 @@
+from __future__ import division
 import math
 from pathlib import Path
 
@@ -127,13 +128,13 @@ def nms_postprocess(keep_out, mask_host, boxes_num):
 
 
 def nms_gpu(dets, nms_overlap_thresh, device_id=0):
-    """nms in gpu. 
-    
+    """nms in gpu.
+
     Args:
         dets ([type]): [description]
         nms_overlap_thresh ([type]): [description]
         device_id ([type], optional): Defaults to 0. [description]
-    
+
     Returns:
         [type]: [description]
     """
@@ -438,14 +439,14 @@ def rotate_nms_kernel(n_boxes, nms_overlap_thresh, dev_boxes, dev_mask):
 
 
 def rotate_nms_gpu(dets, nms_overlap_thresh, device_id=0):
-    """nms in gpu. WARNING: this function can provide right result 
+    """nms in gpu. WARNING: this function can provide right result
     but its performance isn't be tested
-    
+
     Args:
         dets ([type]): [description]
         nms_overlap_thresh ([type]): [description]
         device_id ([type], optional): Defaults to 0. [description]
-    
+
     Returns:
         [type]: [description]
     """
@@ -513,13 +514,13 @@ def rotate_iou_gpu(boxes, query_boxes, device_id=0):
     (take 5ms in one example with numba.cuda code).
     convert from [this project](
         https://github.com/hongzhenwang/RRPN-revise/tree/master/lib/rotation).
-    
+
     Args:
-        boxes (float tensor: [N, 5]): rbboxes. format: centers, dims, 
+        boxes (float tensor: [N, 5]): rbboxes. format: centers, dims,
             angles(clockwise when positive)
         query_boxes (float tensor: [K, 5]): [description]
         device_id (int, optional): Defaults to 0. [description]
-    
+
     Returns:
         [type]: [description]
     """
@@ -607,13 +608,13 @@ def rotate_iou_gpu_eval(boxes, query_boxes, criterion=-1, device_id=0):
     (take 5ms in one example with numba.cuda code).
     convert from [this project](
         https://github.com/hongzhenwang/RRPN-revise/tree/master/lib/rotation).
-    
+
     Args:
-        boxes (float tensor: [N, 5]): rbboxes. format: centers, dims, 
+        boxes (float tensor: [N, 5]): rbboxes. format: centers, dims,
             angles(clockwise when positive)
         query_boxes (float tensor: [K, 5]): [description]
         device_id (int, optional): Defaults to 0. [description]
-    
+
     Returns:
         [type]: [description]
     """

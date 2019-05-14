@@ -1,7 +1,9 @@
-import numpy as np 
+from __future__ import print_function
+from __future__ import division
+import numpy as np
 from tensorboardX import SummaryWriter
-import json 
-from pathlib import Path 
+import json
+from pathlib import Path
 
 def _flat_nested_json_dict(json_dict, flatted, sep=".", start=""):
     for k, v in json_dict.items():
@@ -10,7 +12,7 @@ def _flat_nested_json_dict(json_dict, flatted, sep=".", start=""):
         else:
             flatted[start + sep + str(k)] = v
 
-def flat_nested_json_dict(json_dict, sep=".") -> dict:
+def flat_nested_json_dict(json_dict, sep="."):
     """flat a nested json-like dict. this function make shadow copy.
     """
     flatted = {}
@@ -26,20 +28,20 @@ def metric_to_str(metrics, sep='.'):
     metrics_str_list = []
     for k, v in flatted_metrics.items():
         if isinstance(v, float):
-            metrics_str_list.append(f"{k}={v:.4}")
+            metrics_str_list.append("{}={:.4}".format(k, v))
         elif isinstance(v, (list, tuple)):
             if v and isinstance(v[0], float):
-                v_str = ', '.join([f"{e:.4}" for e in v])
-                metrics_str_list.append(f"{k}=[{v_str}]")
+                v_str = ', '.join(["{:.4}".format(e) for e in v])
+                metrics_str_list.append("{}=[{}]".format(k, v_str))
             else:
-                metrics_str_list.append(f"{k}={v}")
+                metrics_str_list.append("{}={}".format(k, v))
         else:
-            metrics_str_list.append(f"{k}={v}")
+            metrics_str_list.append("{}={}".format(k, v))
     return ', '.join(metrics_str_list)
 
 class SimpleModelLog:
     """For simple log.
-    generate 4 kinds of log: 
+    generate 4 kinds of log:
     1. simple log.txt, all metric dicts are flattened to produce
     readable results.
     2. TensorBoard scalars and texts
@@ -49,7 +51,7 @@ class SimpleModelLog:
     """
     def __init__(self, model_dir):
         self.model_dir = Path(model_dir)
-        self.log_file = None 
+        self.log_file = None
         self.log_mjson_file = None
         self.summary_writter = None
         self.metrics = []
@@ -60,16 +62,19 @@ class SimpleModelLog:
         model_dir = self.model_dir
         assert model_dir.exists()
         summary_dir = model_dir / 'summary'
-        summary_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            summary_dir.mkdir(parents=True)
+        except OSError:
+            pass
 
-        log_mjson_file_path = model_dir / f'log.json.lst'
+        log_mjson_file_path = model_dir / 'log.json.lst'
         if log_mjson_file_path.exists():
-            with open(log_mjson_file_path, 'r') as f:
+            with open(str(log_mjson_file_path), 'r') as f:
                 for line in f.readlines():
                     self.metrics.append(json.loads(line))
-        log_file_path = model_dir / f'log.txt'
-        self.log_mjson_file = open(log_mjson_file_path, 'a')
-        self.log_file = open(log_file_path, 'a')
+        log_file_path = model_dir / 'log.txt'
+        self.log_mjson_file = open(str(log_mjson_file_path), 'a')
+        self.log_file = open(str(log_file_path), 'a')
         self.summary_writter = SummaryWriter(str(summary_dir))
         return self
 
@@ -80,8 +85,8 @@ class SimpleModelLog:
         tb_json_path = str(self.model_dir / "tensorboard_scalars.json")
         self.summary_writter.export_scalars_to_json(tb_json_path)
         self.summary_writter.close()
-        self.log_mjson_file = None 
-        self.log_file = None 
+        self.log_mjson_file = None
+        self.log_file = None
         self.summary_writter = None
 
     def log_text(self, text, step, tag="regular log"):
@@ -100,7 +105,7 @@ class SimpleModelLog:
             self._text_current_gstep = step
 
 
-    def log_metrics(self, metrics: dict, step):
+    def log_metrics(self, metrics, step):
         flatted_summarys = flat_nested_json_dict(metrics, "/")
         for k, v in flatted_summarys.items():
             if isinstance(v, (list, tuple)):
@@ -117,4 +122,3 @@ class SimpleModelLog:
         print(log_str)
         print(log_str, file=self.log_file)
         print(json.dumps(metrics), file=self.log_mjson_file)
-

@@ -59,7 +59,7 @@ class DataBasePreprocessing:
     def __call__(self, db_infos):
         return self._preprocess(db_infos)
 
-    @abc.abstractclassmethod
+    # @abc.abstractclassmethod
     def _preprocess(self, db_infos):
         pass
 
@@ -215,7 +215,7 @@ def _rotation_box2d_jit_(corners, angle, rot_mat_T):
     rot_mat_T[0, 1] = -rot_sin
     rot_mat_T[1, 0] = rot_sin
     rot_mat_T[1, 1] = rot_cos
-    corners[:] = corners @ rot_mat_T
+    corners[:] = np.dot(corners, rot_mat_T)
 
 
 @numba.jit(nopython=True)
@@ -237,7 +237,7 @@ def _box_single_to_corner_jit(boxes):
         rot_mat_T[0, 1] = -rot_sin
         rot_mat_T[1, 0] = rot_sin
         rot_mat_T[1, 1] = rot_cos
-        box_corners[i] = corners[i] @ rot_mat_T + boxes[i, :2]
+        box_corners[i] = np.dot(corners[i], rot_mat_T + boxes[i, :2])
     return box_corners
 
 
@@ -365,8 +365,8 @@ def noise_per_box_group_v2_(boxes, valid_mask, loc_noises, rot_noises,
                     rot_mat_T[0, 1] = -rot_sin
                     rot_mat_T[1, 0] = rot_sin
                     rot_mat_T[1, 1] = rot_cos
-                    current_corners[i] = current_box[
-                        0, 2:4] * corners_norm @ rot_mat_T + current_box[0, :2]
+                    current_corners[i] = np.dot(current_box[
+                        0, 2:4] * corners_norm, rot_mat_T) + current_box[0, :2]
                     current_corners[i] -= current_box[0, :2]
 
                     _rotation_box2d_jit_(current_corners[i],
@@ -429,8 +429,8 @@ def noise_per_box_v2_(boxes, valid_mask, loc_noises, rot_noises,
                 rot_mat_T[0, 1] = -rot_sin
                 rot_mat_T[1, 0] = rot_sin
                 rot_mat_T[1, 1] = rot_cos
-                current_corners[:] = current_box[
-                    0, 2:4] * corners_norm @ rot_mat_T + current_box[0, :2]
+                current_corners[:] = np.dot(current_box[
+                    0, 2:4] * corners_norm, rot_mat_T) + current_box[0, :2]
                 current_corners -= current_box[0, :2]
                 _rotation_box2d_jit_(current_corners, rot_noises[i, j],
                                      rot_mat_T)
@@ -460,7 +460,7 @@ def points_transform_(points, centers, point_masks, loc_transform,
             if valid_mask[j]:
                 if point_masks[i, j] == 1:
                     points[i, :3] -= centers[j, :3]
-                    points[i:i + 1, :3] = points[i:i + 1, :3] @ rot_mat_T[j]
+                    points[i:i + 1, :3] = np.dot(points[i:i + 1, :3], rot_mat_T[j])
                     points[i, :3] += centers[j, :3]
                     points[i, :3] += loc_transform[j]
                     break  # only apply first box's transform
@@ -476,7 +476,7 @@ def box3d_transform_(boxes, loc_transform, rot_transform, valid_mask):
 
 
 def _select_transform(transform, indices):
-    result = np.zeros((transform.shape[0], *transform.shape[2:]),
+    result = np.zeros((transform.shape[0],) + tuple(transform.shape[2:]),
                       dtype=transform.dtype)
     for i in range(transform.shape[0]):
         if indices[i] != -1:

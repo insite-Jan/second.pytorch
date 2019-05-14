@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import division
 import cv2
 import numba
 import numpy as np
@@ -78,10 +80,10 @@ def points_to_bev(points,
             format: xyzxyz, minmax
         with_reflectivity: bool. if True, will add a intensity map to bev map.
     Returns:
-        bev_map: [num_height_maps + 1(2), H, W] float tensor. 
-            `WARNING`: bev_map[-1] is num_points map, NOT density map, 
-            because calculate density map need more time in cpu rather than gpu. 
-            if with_reflectivity is True, bev_map[-2] is intensity map. 
+        bev_map: [num_height_maps + 1(2), H, W] float tensor.
+            `WARNING`: bev_map[-1] is num_points map, NOT density map,
+            because calculate density map need more time in cpu rather than gpu.
+            if with_reflectivity is True, bev_map[-2] is intensity map.
     """
     if not isinstance(voxel_size, np.ndarray):
         voxel_size = np.array(voxel_size, dtype=points.dtype)

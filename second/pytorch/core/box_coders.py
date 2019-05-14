@@ -1,3 +1,4 @@
+from __future__ import division
 import torch
 
 from second.core.box_coders import BevBoxCoder, GroundBox3dCoder
@@ -25,11 +26,11 @@ class BevBoxCoderTorch(BevBoxCoder):
         anchors = anchors[..., [0, 1, 3, 4, 6]]
         ret = box_torch_ops.bev_box_decode(encodings, anchors, self.vec_encode,
                                            self.linear_dim)
-        z_fixed = torch.full([*ret.shape[:-1], 1],
+        z_fixed = torch.full(np.append(ret.shape[:-1], 1),
                              self.z_fixed,
                              dtype=ret.dtype,
                              device=ret.device)
-        h_fixed = torch.full([*ret.shape[:-1], 1],
+        h_fixed = torch.full(np.append(ret.shape[:-1], 1),
                              self.h_fixed,
                              dtype=ret.dtype,
                              device=ret.device)

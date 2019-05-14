@@ -1,3 +1,4 @@
+from __future__ import division
 import io as sysio
 import json
 import os
@@ -77,7 +78,7 @@ class KittiDrawControl(panel.ControlPanel):
                                      bbox_plot.gl_color(GLColor.Green))
                 self.add_fspinbox("GTBoxAlpha", 0.0, 1.0, 0.05, 0.5)
                 self.add_checkbox("DrawDTBoxes")
-                
+
                 self.add_checkbox("DrawDTLabels")
                 self.add_checkbox("DTScoreAsAlpha")
                 self.add_fspinbox("DTScoreThreshold", 0.0, 1.0, 0.01, 0.3)
@@ -631,7 +632,7 @@ class KittiViewer(QMainWindow):
         self.current_idx = 0
         self.dt_image_idxes = None
         self.current_image = None
-        
+
         self.kitti_info = None
         self.points = None
         self.gt_boxes = None
@@ -1146,9 +1147,9 @@ class KittiViewer(QMainWindow):
         Trv2c = calib['Tr_velo_to_cam']
         # detection_anno = kitti.remove_low_height(detection_anno, 25)
         detection_anno = kitti.remove_low_score(detection_anno, self.w_config.get("DTScoreThreshold"))
-        
+
         dt_bboxes = detection_anno["bbox"]
-        
+
         dt_boxes_corners, scores, dt_box_lidar = kitti_anno_to_corners(
             self.kitti_info, detection_anno)
         print("DEBUG", dt_box_lidar)
@@ -1286,7 +1287,7 @@ class KittiViewer(QMainWindow):
         x = x * voxel_size[0] + shift[0] + 0.5 * voxel_size[0]
         y = y * voxel_size[1] + shift[1] + 0.5 * voxel_size[1]
         xy1, xy2 = np.meshgrid(x, y)
-        
+
         def gaussian2d(x, y, A, ux=0, uy=0, stdx=1, stdy=1):
             return A * np.exp(-0.5 * ((x - ux) / stdx) ** 2 - 0.5 * ((y - uy) / stdy) ** 2)
         z = gaussian2d(xy1, xy2, 0, 0, 2, 2) - 20

@@ -25,7 +25,7 @@ from second.utils.progress_bar import ProgressBar
 import psutil
 
 def example_convert_to_torch(example, dtype=torch.float32,
-                             device=None) -> dict:
+                             device=None):
     device = device or torch.device("cuda:0")
     example_torch = {}
     float_names = [
@@ -70,7 +70,7 @@ def build_network(model_cfg, measure_time=False):
 def _worker_init_fn(worker_id):
     time_seed = np.array(time.time(), dtype=np.int32)
     np.random.seed(time_seed + worker_id)
-    print(f"WORKER {worker_id} seed:", np.random.get_state()[1][0])
+    print("WORKER {} seed:".format(worker_id), np.random.get_state()[1][0])
 
 
 def train(config_path,
@@ -82,19 +82,29 @@ def train(config_path,
           pretrained_path=None,
           multi_gpu=False,
           num_gpu=None,
-          resume=False):
+          resume=False,
+          overwrite=False):
     """train a VoxelNet model specified by a config file.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+
+    if not os.path.exists(str(model_dir)):
+        os.mkdir(str(model_dir))
+    else:
+        if overwrite:
+            shutil.rmtree(model_dir)
+            os.mkdir(str(model_dir))
+        elif not resume:
+            raise ValueError("model dir exists and you don't specify resume.")
+
     model_dir = str(Path(model_dir).resolve())
-    if create_folder:
-        if Path(model_dir).exists():
-            model_dir = torchplus.train.create_folder(model_dir)
+    # deprecated create_folder due to the above line crashing on resolve if dir doesnt exist
+    # if create_folder:
+    #     if Path(model_dir).exists():
+    #         model_dir = torchplus.train.create_folder(model_dir)
     model_dir = Path(model_dir)
-    if not resume and model_dir.exists():
-        raise ValueError("model dir exists and you don't specify resume.")
-    model_dir.mkdir(parents=True, exist_ok=True)
+    # if not model_dir.exists():
+    #     model_dir.mkdir(parents=True)
     if result_path is None:
         result_path = model_dir / 'results'
     config_file_bkp = "pipeline.config"
@@ -103,14 +113,14 @@ def train(config_path,
         # when you want to train with several different parameters in
         # one script.
         config = pipeline_pb2.TrainEvalPipelineConfig()
-        with open(config_path, "r") as f:
+        with open(str(config_path), "r") as f:
             proto_str = f.read()
             text_format.Merge(proto_str, config)
     else:
         config = config_path
         proto_str = text_format.MessageToString(config, indent=2)
     with (model_dir / config_file_bkp).open("w") as f:
-        f.write(proto_str)
+        f.write(unicode(proto_str, 'utf-8'))
 
     input_cfg = config.train_input_reader
     eval_input_cfg = config.eval_input_reader
@@ -126,7 +136,7 @@ def train(config_path,
     voxel_generator = net.voxel_generator
     class_names = target_assigner.classes
 
-    
+
     print("num_trainable parameters:", len(list(net.parameters())))
     # for n, p in net.named_parameters():
     #     print(n, p.shape)
@@ -170,12 +180,14 @@ def train(config_path,
     else:
         float_dtype = torch.float32
 
+    print("train config")
+    print(train_cfg)
     if multi_gpu:
         if num_gpu is None:
             num_gpu = torch.cuda.device_count()
         else:
             assert num_gpu < torch.cuda.device_count()
-        print(f"MULTI-GPU: use {num_gpu} gpu")
+        print("MULTI-GPU: use {} gpu".format(num_gpu))
         collate_fn = merge_second_batch_multigpu
     else:
         collate_fn = merge_second_batch
@@ -261,8 +273,8 @@ def train(config_path,
                 loss = ret_dict["loss"].mean()
                 cls_loss_reduced = ret_dict["cls_loss_reduced"].mean()
                 loc_loss_reduced = ret_dict["loc_loss_reduced"].mean()
-                cls_pos_loss = ret_dict["cls_pos_loss"]
-                cls_neg_loss = ret_dict["cls_neg_loss"]
+                cls_pos_loss = ret_dict["cls_pos_loss"].mean()
+                cls_neg_loss = ret_dict["cls_neg_loss"].mean()
                 loc_loss = ret_dict["loc_loss"]
                 cls_loss = ret_dict["cls_loss"]
                 dir_loss_reduced = ret_dict["dir_loss_reduced"].mean()
@@ -333,8 +345,9 @@ def train(config_path,
             torchplus.train.save_models(model_dir, [net, amp_optimizer],
                                         net.get_global_step())
             net.eval()
-            result_path_step = result_path / f"step_{net.get_global_step()}"
-            result_path_step.mkdir(parents=True, exist_ok=True)
+            result_path_step = result_path / "step_{}".format(net.get_global_step())
+            if not os.path.isdir(str(result_path_step)):
+                result_path_step.mkdir(parents=True)
             model_logging.log_text("#################################",
                                    global_step)
             model_logging.log_text("# EVAL", global_step)
@@ -354,7 +367,7 @@ def train(config_path,
 
             sec_per_ex = len(eval_dataset) / (time.time() - t)
             model_logging.log_text(
-                f'generate label finished({sec_per_ex:.2f}/s). start eval:',
+                'generate label finished({:.2f}/s). start eval:'.format(sec_per_ex),
                 global_step)
             result_dict = eval_dataset.dataset.evaluation(
                 detections, str(result_path_step))
@@ -362,7 +375,7 @@ def train(config_path,
                 model_logging.log_text("Evaluation {}".format(k), global_step)
                 model_logging.log_text(v, global_step)
             model_logging.log_metrics(result_dict["detail"], global_step)
-            with open(result_path_step / "result.pkl", 'wb') as f:
+            with open(str(result_path_step / "result.pkl"), 'wb') as f:
                 pickle.dump(detections, f)
             net.train()
     except Exception as e:
@@ -398,7 +411,7 @@ def evaluate(config_path,
         # when you want to eval with several different parameters in
         # one script.
         config = pipeline_pb2.TrainEvalPipelineConfig()
-        with open(config_path, "r") as f:
+        with open(str(config_path), "r") as f:
             proto_str = f.read()
             text_format.Merge(proto_str, config)
     else:
@@ -449,8 +462,9 @@ def evaluate(config_path,
         float_dtype = torch.float32
 
     net.eval()
-    result_path_step = result_path / f"step_{net.get_global_step()}"
-    result_path_step.mkdir(parents=True, exist_ok=True)
+    result_path_step = result_path / "step_{}".format(net.get_global_step())
+    if not os.path.isdir(str(result_path_step)):
+        result_path_step.mkdir(parents=True)
     t = time.time()
     detections = []
     print("Generate output labels...")
@@ -461,29 +475,40 @@ def evaluate(config_path,
     t2 = time.time()
 
     for example in iter(eval_dataloader):
+        print("example")
+        print("num_points: {}".format(example["num_points"].shape))
+        print("anchors: {}".format(example["anchors"].shape))
+        print("coordinates: {}".format(example["coordinates"].shape))
         if measure_time:
             prep_times.append(time.time() - t2)
             torch.cuda.synchronize()
             t1 = time.time()
         example = example_convert_to_torch(example, float_dtype)
+        # print("torch")
+        # print(example)
         if measure_time:
             torch.cuda.synchronize()
             prep_example_times.append(time.time() - t1)
-        detections += net(example)
+        pred = net(example)
+        print("pred:")
+        print("labelpreds: {}".format(pred[0]["label_preds"].shape))
+        print("box3d: {}".format(pred[0]["box3d_lidar"].shape))
+        print("scores: {}".format(pred[0]["scores"].shape))
+        detections += pred# net(example)
         bar.print_bar()
         if measure_time:
             t2 = time.time()
 
     sec_per_example = len(eval_dataset) / (time.time() - t)
-    print(f'generate label finished({sec_per_example:.2f}/s). start eval:')
+    print('generate label finished({:.2f}/s). start eval:'.format(sec_per_example))
     if measure_time:
         print(
-            f"avg example to torch time: {np.mean(prep_example_times) * 1000:.3f} ms"
+            "avg example to torch time: {:.3f} ms".format(np.mean(prep_example_times) * 1000)
         )
-        print(f"avg prep time: {np.mean(prep_times) * 1000:.3f} ms")
+        print("avg prep time: {:.3f} ms".format(np.mean(prep_times) * 1000))
     for name, val in net.get_avg_time_dict().items():
-        print(f"avg {name} time = {val * 1000:.3f} ms")
-    with open(result_path_step / "result.pkl", 'wb') as f:
+        print("avg {} time = {:.3f} ms".format(name, val * 1000))
+    with open(str(result_path_step / "result.pkl"), 'wb') as f:
         pickle.dump(detections, f)
     result_dict = eval_dataset.dataset.evaluation(detections,
                                                   str(result_path_step))
@@ -495,11 +520,11 @@ def evaluate(config_path,
 
 def save_config(config_path, save_path):
     config = pipeline_pb2.TrainEvalPipelineConfig()
-    with open(config_path, "r") as f:
+    with open(str(config_path), "r") as f:
         proto_str = f.read()
         text_format.Merge(proto_str, config)
     ret = text_format.MessageToString(config, indent=2)
-    with open(save_path, 'w') as f:
+    with open(str(save_path), 'w') as f:
         f.write(ret)
 
 

@@ -1,5 +1,6 @@
 """This backend now only support lidar. camera is no longer supported.
 """
+from __future__ import division
 
 import base64
 import datetime
@@ -31,7 +32,7 @@ CORS(app)
 
 class SecondBackend:
     def __init__(self):
-        self.root_path = None 
+        self.root_path = None
         self.image_idxes = None
         self.dt_annos = None
         self.dataset = None
@@ -74,7 +75,7 @@ def read_detection():
     if BACKEND.root_path is None:
         return error_response("root path is not set")
     if Path(det_path).is_file():
-        with open(det_path, "rb") as f:
+        with open(str(det_path), "rb") as f:
             dt_annos = pickle.load(f)
     else:
         dt_annos = kitti.get_label_annos(det_path)
@@ -93,7 +94,7 @@ def get_pointcloud():
         return error_response("root path is not set")
     image_idx = instance["image_idx"]
     enable_int16 = instance["enable_int16"]
-    
+
     idx = BACKEND.image_idxes.index(image_idx)
     sensor_data = BACKEND.dataset.get_sensor_data(idx)
 
@@ -129,7 +130,7 @@ def get_image():
     instance = request.json
     response = {"status": "normal"}
     if BACKEND.root_path is None:
-        return error_response("root path is not set")    
+        return error_response("root path is not set")
     image_idx = instance["image_idx"]
     idx = BACKEND.image_idxes.index(image_idx)
     query = {
@@ -165,7 +166,7 @@ def build_network_():
         return error_response("ckpt file not exist.")
     config = pipeline_pb2.TrainEvalPipelineConfig()
 
-    with open(cfg_path, "r") as f:
+    with open(str(cfg_path), "r") as f:
         proto_str = f.read()
         text_format.Merge(proto_str, config)
     device = device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

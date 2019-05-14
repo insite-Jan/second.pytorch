@@ -18,6 +18,8 @@
 Region Similarity Calculators compare a pairwise measure of similarity
 between the boxes in two BoxLists.
 """
+from __future__ import division
+
 from abc import ABCMeta
 from abc import abstractmethod
 
@@ -115,8 +117,8 @@ class DistanceSimilarity(RegionSimilarityCalculator):
       A tensor with shape [N, M] representing negated pairwise squared distance.
     """
     return box_np_ops.distance_similarity(
-        boxes1[..., [0, 1, -1]], 
-        boxes2[..., [0, 1, -1]], 
+        boxes1[..., [0, 1, -1]],
+        boxes2[..., [0, 1, -1]],
         dist_norm=self._distance_norm,
         with_rotation=self._with_rotation,
         rot_alpha=self._rotation_alpha)

@@ -1,3 +1,4 @@
+from __future__ import division
 import time
 
 import numpy as np
@@ -35,6 +36,7 @@ class RPN(nn.Module):
         assert len(num_filters) == len(layer_nums)
         assert len(upsample_strides) == len(layer_nums)
         assert len(num_upsample_filters) == len(layer_nums)
+        upsample_strides = [np.round(u).astype(np.int64) for u in upsample_strides]
         factors = []
         for i in range(len(layer_nums)):
             assert int(np.prod(
@@ -235,7 +237,7 @@ class RPNBase(nn.Module):
             ConvTranspose2d = change_default_args(bias=True)(
                 nn.ConvTranspose2d)
 
-        in_filters = [num_input_features, *num_filters[:-1]]
+        in_filters = [num_input_features] + num_filters[:-1]
         blocks = []
         deblocks = []
 

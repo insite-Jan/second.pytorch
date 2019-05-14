@@ -1,3 +1,4 @@
+from __future__ import division
 import time
 
 import numpy as np
@@ -824,7 +825,7 @@ class SpMiddleFHDV2(nn.Module):
             spconv.SparseMaxPool3d([2, 1, 1]),
         )
         self.max_batch_size = 6
-        self.grid = torch.full([self.max_batch_size, *sparse_shape],
+        self.grid = torch.full([self.max_batch_size] + sparse_shape,
                                -1,
                                dtype=torch.int32).cuda()
 
@@ -940,7 +941,7 @@ class SpMiddle2K(nn.Module):
             nn.ReLU(),
         )
         self.max_batch_size = 3
-        self.grid = torch.full([self.max_batch_size, *sparse_shape],
+        self.grid = torch.full([self.max_batch_size] + sparse_shape,
                                -1,
                                dtype=torch.int32).cuda()
 

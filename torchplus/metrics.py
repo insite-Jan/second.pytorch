@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -6,7 +7,7 @@ from torch import nn
 
 class Scalar(nn.Module):
     def __init__(self):
-        super().__init__()
+        super(Scalar, self).__init__()
         self.register_buffer('total', torch.FloatTensor([0.0]))
         self.register_buffer('count', torch.FloatTensor([0.0]))
 
@@ -30,7 +31,7 @@ class Accuracy(nn.Module):
                  ignore_idx=-1,
                  threshold=0.5,
                  encode_background_as_zeros=True):
-        super().__init__()
+        super(Accuracy, self).__init__()
         self.register_buffer('total', torch.FloatTensor([0.0]))
         self.register_buffer('count', torch.FloatTensor([0.0]))
         self._ignore_idx = ignore_idx
@@ -49,7 +50,8 @@ class Accuracy(nn.Module):
                                       torch.tensor(0).type_as(labels_pred))
         else:
             pred_labels = torch.max(preds, dim=self._dim)[1]
-        N, *Ds = labels.shape
+        N = labels.shape[0]
+        Ds = labels.shape[1:]
         labels = labels.view(N, int(np.prod(Ds)))
         pred_labels = pred_labels.view(N, int(np.prod(Ds)))
         if weights is None:
@@ -75,7 +77,7 @@ class Accuracy(nn.Module):
 
 class Precision(nn.Module):
     def __init__(self, dim=1, ignore_idx=-1, threshold=0.5):
-        super().__init__()
+        super(Precision, self).__init__()
         self.register_buffer('total', torch.FloatTensor([0.0]))
         self.register_buffer('count', torch.FloatTensor([0.0]))
         self._ignore_idx = ignore_idx
@@ -92,7 +94,8 @@ class Precision(nn.Module):
             assert preds.shape[
                 self._dim] == 2, "precision only support 2 class"
             pred_labels = torch.max(preds, dim=self._dim)[1]
-        N, *Ds = labels.shape
+        N = labels.shape[0]
+        Ds = labels.shape[1:]
         labels = labels.view(N, int(np.prod(Ds)))
         pred_labels = pred_labels.view(N, int(np.prod(Ds)))
         if weights is None:
@@ -125,7 +128,7 @@ class Precision(nn.Module):
 
 class Recall(nn.Module):
     def __init__(self, dim=1, ignore_idx=-1, threshold=0.5):
-        super().__init__()
+        super(Recall, self).__init__()
         self.register_buffer('total', torch.FloatTensor([0.0]))
         self.register_buffer('count', torch.FloatTensor([0.0]))
         self._ignore_idx = ignore_idx
@@ -142,7 +145,8 @@ class Recall(nn.Module):
             assert preds.shape[
                 self._dim] == 2, "precision only support 2 class"
             pred_labels = torch.max(preds, dim=self._dim)[1]
-        N, *Ds = labels.shape
+        N = labels.shape[0]
+        Ds = labels.shape[1:]
         labels = labels.view(N, int(np.prod(Ds)))
         pred_labels = pred_labels.view(N, int(np.prod(Ds)))
         if weights is None:
@@ -178,7 +182,8 @@ def _calc_binary_metrics(labels,
                          threshold=0.5):
 
     pred_labels = (scores > threshold).long()
-    N, *Ds = labels.shape
+    N = labels.shape[0]
+    Ds = labels.shape[1:]
     labels = labels.view(N, int(np.prod(Ds)))
     pred_labels = pred_labels.view(N, int(np.prod(Ds)))
     pred_trues = pred_labels > 0
@@ -199,7 +204,7 @@ class PrecisionRecall(nn.Module):
                  thresholds=0.5,
                  use_sigmoid_score=False,
                  encode_background_as_zeros=True):
-        super().__init__()
+        super(PrecisionRecall, self).__init__()
         if not isinstance(thresholds, (list, tuple)):
             thresholds = [thresholds]
 

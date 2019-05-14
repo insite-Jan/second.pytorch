@@ -1,3 +1,4 @@
+from __future__ import print_function
 import pickle
 from pathlib import Path
 
@@ -9,7 +10,7 @@ from second.data.kitti_dataset import KittiDataset
 from second.data.nuscenes_dataset import NuScenesDataset
 from second.utils.progress_bar import progress_bar_iter as prog_bar
 
-def get_dataset_class(name) -> Dataset:
+def get_dataset_class(name):
     return {
         "KittiDataset": KittiDataset,
         "NuScenesDataset": NuScenesDataset,
@@ -38,7 +39,11 @@ def create_groundtruth_database(dataset_class_name,
         database_save_path = Path(database_save_path)
     if db_info_save_path is None:
         db_info_save_path = root_path / "kitti_dbinfos_train.pkl"
-    database_save_path.mkdir(parents=True, exist_ok=True)
+    try:
+        database_save_path.mkdir(parents=True)
+    except OSError:
+        pass
+
     all_db_infos = {}
 
     group_counter = 0
@@ -64,12 +69,12 @@ def create_groundtruth_database(dataset_class_name,
         num_obj = gt_boxes.shape[0]
         point_indices = box_np_ops.points_in_rbbox(points, gt_boxes)
         for i in range(num_obj):
-            filename = f"{image_idx}_{names[i]}_{i}.bin"
+            filename = "{}_{}_{}.bin".format(image_idx, names[i], i)
             filepath = database_save_path / filename
             gt_points = points[point_indices[:, i]]
 
             gt_points[:, :3] -= gt_boxes[i, :3]
-            with open(filepath, 'w') as f:
+            with open(str(filepath), 'w') as f:
                 gt_points.tofile(f)
             if (used_classes is None) or names[i] in used_classes:
                 if relative_path:
@@ -100,7 +105,7 @@ def create_groundtruth_database(dataset_class_name,
                 else:
                     all_db_infos[names[i]] = [db_info]
     for k, v in all_db_infos.items():
-        print(f"load {len(v)} {k} database infos")
+        print("load {} {} database infos".format(len(v), k))
 
-    with open(db_info_save_path, 'wb') as f:
+    with open(str(db_info_save_path), 'wb') as f:
         pickle.dump(all_db_infos, f)

@@ -14,14 +14,15 @@
 # ==============================================================================
 """VoxelNet builder.
 """
+from __future__ import division
 
 from second.protos import second_pb2
 from second.pytorch.builder import losses_builder
 from second.pytorch.models.voxelnet import LossNormType, VoxelNet
 
 
-def build(model_cfg: second_pb2.VoxelNet, voxel_generator,
-          target_assigner, measure_time=False) -> VoxelNet:
+def build(model_cfg, voxel_generator,
+          target_assigner, measure_time=False):
     """build second pytorch instance.
     """
     if not isinstance(model_cfg, second_pb2.VoxelNet):

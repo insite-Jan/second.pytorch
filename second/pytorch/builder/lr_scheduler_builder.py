@@ -14,6 +14,7 @@
 # ==============================================================================
 
 """Functions to build DetectionModel training optimizers."""
+from __future__ import division
 
 from torchplus.train import learning_schedules_fastai as lsf
 import torch

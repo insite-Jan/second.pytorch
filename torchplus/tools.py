@@ -1,6 +1,7 @@
 import functools
 import inspect
 import sys
+import funcsigs
 from collections import OrderedDict
 
 import numba
@@ -10,7 +11,7 @@ import torch
 
 def get_pos_to_kw_map(func):
     pos_to_kw = {}
-    fsig = inspect.signature(func)
+    fsig = funcsigs.signature(func)
     pos = 0
     for name, info in fsig.parameters.items():
         if info.kind is info.POSITIONAL_OR_KEYWORD:
@@ -38,7 +39,7 @@ def change_default_args(**kwargs):
                 for key, val in kwargs.items():
                     if key not in kw and kw_to_pos[key] > len(args):
                         kw[key] = val
-                super().__init__(*args, **kw)
+                super(DefaultArgLayer, self).__init__(*args, **kw)
 
         return DefaultArgLayer
 

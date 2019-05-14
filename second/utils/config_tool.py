@@ -1,10 +1,12 @@
 # This file contains some config modification function.
 # some functions should be only used for KITTI dataset.
+from __future__ import print_function
+from __future__ import division
 
 from google.protobuf import text_format
 from second.protos import pipeline_pb2, second_pb2
 from pathlib import Path
-import numpy as np 
+import numpy as np
 
 
 def change_detection_range(model_config, new_range):
@@ -52,8 +54,7 @@ if __name__ == "__main__":
     with open(config_path, "r") as f:
         proto_str = f.read()
         text_format.Merge(proto_str, config)
-    
+
     change_detection_range(config, [-50, -50, 50, 50])
     proto_str = text_format.MessageToString(config, indent=2)
     print(proto_str)
-    

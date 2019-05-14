@@ -106,7 +106,7 @@ class WeightedL2LocalizationLoss(Loss):
     super().__init__()
     if code_weights is not None:
       self._code_weights = np.array(code_weights, dtype=np.float32)
-      self._code_weights = Variable(torch.from_numpy(self._code_weights).cuda())
+      self._code_weights = torch.from_numpy(self._code_weights)
     else:
       self._code_weights = None
 
@@ -126,7 +126,7 @@ class WeightedL2LocalizationLoss(Loss):
     """
     diff = prediction_tensor - target_tensor
     if self._code_weights is not None:
-      self._code_weights = self._code_weights.type_as(prediction_tensor)
+      self._code_weights = self._code_weights.type_as(prediction_tensor).to(prediction_tensor.device)
       self._code_weights = self._code_weights.view(1, 1, -1)
       diff = self._code_weights * diff
     weighted_diff = diff * weights.unsqueeze(-1)
@@ -186,6 +186,7 @@ def _sigmoid_cross_entropy_with_logits(logits, labels):
   # to be compatible with tensorflow, we don't use ignore_idx
   loss = torch.clamp(logits, min=0) - logits * labels.type_as(logits)
   loss += torch.log1p(torch.exp(-torch.abs(logits)))
+  # loss = nn.BCEWithLogitsLoss(reduce="none")(logits, labels.type_as(logits))
   # transpose_param = [0] + [param[-1]] + param[1:-1]
   # logits = logits.permute(*transpose_param)
   # loss_ftor = nn.NLLLoss(reduce=False)
@@ -196,7 +197,7 @@ def _softmax_cross_entropy_with_logits(logits, labels):
   param = list(range(len(logits.shape)))
   transpose_param = [0] + [param[-1]] + param[1:-1]
   logits = logits.permute(*transpose_param) # [N, ..., C] -> [N, C, ...]
-  loss_ftor = nn.CrossEntropyLoss(reduce=False)
+  loss_ftor = nn.CrossEntropyLoss(reduction='none')
   loss = loss_ftor(logits, labels.max(dim=-1)[1])
   return loss
 

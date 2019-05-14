@@ -11,7 +11,7 @@ from torchplus.tools import torch_to_np_dtype
 from second.core.non_max_suppression.nms_gpu import (nms_gpu_cc, rotate_iou_gpu,
                                                        rotate_nms_gpu)
 from second.core.non_max_suppression.nms_cpu import rotate_nms_cc
-
+import spconv
 
 def second_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=False):
     """box encode for VoxelNet
@@ -19,12 +19,20 @@ def second_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=F
         boxes ([N, 7] Tensor): normal boxes: x, y, z, l, w, h, r
         anchors ([N, 7] Tensor): anchors
     """
-    xa, ya, za, wa, la, ha, ra = torch.split(anchors, 1, dim=-1)
-    xg, yg, zg, wg, lg, hg, rg = torch.split(boxes, 1, dim=-1)
+    box_ndim = anchors.shape[-1]
+    cas, cgs = [], []
+    if box_ndim > 7:
+        xa, ya, za, wa, la, ha, ra, *cas = torch.split(anchors, 1, dim=-1)
+        xg, yg, zg, wg, lg, hg, rg, *cgs = torch.split(boxes, 1, dim=-1)
+    else:
+        xa, ya, za, wa, la, ha, ra = torch.split(anchors, 1, dim=-1)
+        xg, yg, zg, wg, lg, hg, rg = torch.split(boxes, 1, dim=-1)
+
     diagonal = torch.sqrt(la**2 + wa**2)
     xt = (xg - xa) / diagonal
     yt = (yg - ya) / diagonal
     zt = (zg - za) / ha
+    cts = [g - a for g, a in zip(cgs, cas)]
     if smooth_dim:
         lt = lg / la - 1
         wt = wg / wa - 1
@@ -40,13 +48,10 @@ def second_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=F
         ray = torch.sin(ra)
         rtx = rgx - rax
         rty = rgy - ray
-        return torch.cat([xt, yt, zt, wt, lt, ht, rtx, rty], dim=-1)
+        return torch.cat([xt, yt, zt, wt, lt, ht, rtx, rty, *cts], dim=-1)
     else:
         rt = rg - ra
-        return torch.cat([xt, yt, zt, wt, lt, ht, rt], dim=-1)
-
-    # rt = rg - ra
-    # return torch.cat([xt, yt, zt, wt, lt, ht, rt], dim=-1)
+        return torch.cat([xt, yt, zt, wt, lt, ht, rt, *cts], dim=-1)
 
 
 def second_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smooth_dim=False):
@@ -55,13 +60,23 @@ def second_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smoo
         boxes ([N, 7] Tensor): normal boxes: x, y, z, w, l, h, r
         anchors ([N, 7] Tensor): anchors
     """
-    xa, ya, za, wa, la, ha, ra = torch.split(anchors, 1, dim=-1)
-    if encode_angle_to_vector:
-        xt, yt, zt, wt, lt, ht, rtx, rty = torch.split(
-            box_encodings, 1, dim=-1)
-
+    box_ndim = anchors.shape[-1]
+    cas, cts = [], []
+    if box_ndim > 7:
+        xa, ya, za, wa, la, ha, ra, *cas = torch.split(anchors, 1, dim=-1)
+        if encode_angle_to_vector:
+            xt, yt, zt, wt, lt, ht, rtx, rty, *cts = torch.split(
+                box_encodings, 1, dim=-1)
+        else:
+            xt, yt, zt, wt, lt, ht, rt, *cts = torch.split(box_encodings, 1, dim=-1)
     else:
-        xt, yt, zt, wt, lt, ht, rt = torch.split(box_encodings, 1, dim=-1)
+        xa, ya, za, wa, la, ha, ra = torch.split(anchors, 1, dim=-1)
+        if encode_angle_to_vector:
+            xt, yt, zt, wt, lt, ht, rtx, rty = torch.split(
+                box_encodings, 1, dim=-1)
+        else:
+            xt, yt, zt, wt, lt, ht, rt = torch.split(box_encodings, 1, dim=-1)
+
     # za = za + ha / 2
     # xt, yt, zt, wt, lt, ht, rt = torch.split(box_encodings, 1, dim=-1)
     diagonal = torch.sqrt(la**2 + wa**2)
@@ -73,7 +88,6 @@ def second_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smoo
         wg = (wt + 1) * wa
         hg = (ht + 1) * ha
     else:
-
         lg = torch.exp(lt) * la
         wg = torch.exp(wt) * wa
         hg = torch.exp(ht) * ha
@@ -85,8 +99,8 @@ def second_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smoo
         rg = torch.atan2(rgy, rgx)
     else:
         rg = rt + ra
-    # zg = zg - hg / 2
-    return torch.cat([xg, yg, zg, wg, lg, hg, rg], dim=-1)
+    cgs = [t + a for t, a in zip(cts, cas)]
+    return torch.cat([xg, yg, zg, wg, lg, hg, rg, *cgs], dim=-1)
 
 def bev_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=False):
     """box encode for VoxelNet
@@ -354,6 +368,8 @@ def project_to_image(points_3d, proj_mat):
     point_2d_res = point_2d[..., :2] / point_2d[..., 2:3]
     return point_2d_res
 
+def limit_period(val, offset=0.5, period=np.pi):
+    return val - torch.floor(val / period + offset) * period
 
 def camera_to_lidar(points, r_rect, velo2cam):
     num_points = points.shape[0]
@@ -425,7 +441,7 @@ def multiclass_nms(nms_func,
                 class_boxes = class_boxes[class_scores_keep]
             keep = nms_func(class_boxes, class_scores, pre_max_size,
                             post_max_size, iou_threshold)
-            if keep is not None:
+            if keep.shape[0] != 0:
                 if score_thresh > 0.0:
                     selected_per_class.append(class_scores_keep[keep])
                 else:
@@ -460,6 +476,19 @@ def nms(bboxes,
         return indices[keep]
     else:
         return torch.from_numpy(keep).long().to(bboxes.device)
+
+def nms_v2(bboxes,
+        scores,
+        pre_max_size=None,
+        post_max_size=None,
+        iou_threshold=0.5):
+    if pre_max_size is None:
+        pre_max_size = -1
+    if post_max_size is None:
+        post_max_size = -1
+    res = spconv.ops.nms(bboxes.cpu(), scores.cpu(), pre_max_size, post_max_size, iou_threshold, 1.0)
+    return res.to(bboxes.device)
+
 
 def rotate_nms(rbboxes,
                scores,

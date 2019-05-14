@@ -1,7 +1,11 @@
-# SECOND for KITTI/NuScenes object detection
+# SECOND for KITTI/NuScenes object detection (1.6.0 Alpha)
 SECOND detector.
 
+"Alpha" means there may be many bugs, config format may change, spconv API may change.
+
 ONLY support python 3.6+, pytorch 1.0.0+. Tested in Ubuntu 16.04/18.04/Windows 10.
+
+If you want to train nuscenes dataset, see [this](NUSCENES-GUIDE.md).
 
 ## News
 
@@ -44,6 +48,29 @@ bev  AP:90.38, 88.20, 86.98
 3d   AP:89.16, 78.78, 77.41
 ```
 
+### Performance in NuScenes validation set (all.pp.config, NuScenes mini train set, 3517 samples, not v1.0-mini)
+
+```
+car Nusc dist AP@0.5, 1.0, 2.0, 4.0
+62.90, 73.07, 76.77, 78.79
+bicycle Nusc dist AP@0.5, 1.0, 2.0, 4.0
+0.00, 0.00, 0.00, 0.00
+bus Nusc dist AP@0.5, 1.0, 2.0, 4.0
+9.53, 26.17, 38.01, 40.60
+construction_vehicle Nusc dist AP@0.5, 1.0, 2.0, 4.0
+0.00, 0.00, 0.44, 1.43
+motorcycle Nusc dist AP@0.5, 1.0, 2.0, 4.0
+9.25, 12.90, 13.69, 14.11
+pedestrian Nusc dist AP@0.5, 1.0, 2.0, 4.0
+61.44, 62.61, 64.09, 66.35
+traffic_cone Nusc dist AP@0.5, 1.0, 2.0, 4.0
+11.63, 13.14, 15.81, 21.22
+trailer Nusc dist AP@0.5, 1.0, 2.0, 4.0
+0.80, 9.90, 17.61, 23.26
+truck Nusc dist AP@0.5, 1.0, 2.0, 4.0
+9.81, 21.40, 27.55, 30.34
+```
+
 ## Install
 
 ### 1. Clone code
@@ -75,7 +102,7 @@ Follow instructions in [spconv](https://github.com/traveller59/spconv) to instal
 
 If you want to train with fp16 mixed precision (train faster in RTX series, Titan V/RTX and Tesla V100, but I only have 1080Ti), you need to install [apex](https://github.com/NVIDIA/apex).
 
-If you want to use NuScenes dataset, you need to install [nuscenes-devkit](https://github.com/nutonomy/nuscenes-devkit), I recommend to copy nuscenes in python-sdk to second/.. folder (equalivent to add it to PYTHONPATH) and manually install its dependencies, use pip to install devkit will install many fixed-version library.
+If you want to use NuScenes dataset, you need to install [nuscenes-devkit](https://github.com/nutonomy/nuscenes-devkit).
 
 ### 3. Setup cuda for numba (will be removed in 1.6.0 release)
 
@@ -135,7 +162,9 @@ Then run
 ```bash
 python create_data.py nuscenes_data_prep --data_path=NUSCENES_TRAINVAL_DATASET_ROOT --version="v1.0-trainval" --max_sweeps=10
 python create_data.py nuscenes_data_prep --data_path=NUSCENES_TEST_DATASET_ROOT --version="v1.0-test" --max_sweeps=10
+--dataset_name="NuscenesDataset"
 ```
+This will create gt database **without velocity**. to add velocity, use dataset name ```NuscenesDatasetVelo```.
 
 * Modify config file
 
@@ -149,6 +178,7 @@ train_input_reader: {
     ...
   }
   dataset: {
+    dataset_class_name: "DATASET_NAME"
     kitti_info_path: "/path/to/dataset_infos_train.pkl"
     kitti_root_path: "DATASET_ROOT"
   }
@@ -157,6 +187,7 @@ train_input_reader: {
 eval_input_reader: {
   ...
   dataset: {
+    dataset_class_name: "DATASET_NAME"
     kitti_info_path: "/path/to/dataset_infos_val.pkl"
     kitti_root_path: "DATASET_ROOT"
   }
@@ -182,6 +213,10 @@ Assume you have 4 GPUs and want to train with 3 GPUs:
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,3 python ./pytorch/train.py train --config_path=./configs/car.fhd.config --model_dir=/path/to/model_dir --multi_gpu=True
 ```
+
+Note: The batch_size and num_workers in config file is per-GPU, if you use multi-gpu, they will be multiplied by number of GPUs. Don't modify them manually.
+
+You need to modify total step in config file. For example, 50 epochs = 15500 steps for car.lite.config and single GPU, if you use 4 GPUs, you need to divide ```steps``` and ```steps_per_eval``` by 4.
 
 #### train with fp16 (mixed precision)
 

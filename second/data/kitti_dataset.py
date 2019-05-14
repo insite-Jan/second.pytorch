@@ -10,9 +10,10 @@ from second.core import box_np_ops
 from second.core import preprocess as prep
 from second.data import kitti_common as kitti
 from second.utils.eval import get_coco_eval_result, get_official_eval_result
-from second.data.dataset import Dataset
+from second.data.dataset import Dataset, register_dataset
 from second.utils.progress_bar import progress_bar_iter as prog_bar
 
+@register_dataset
 class KittiDataset(Dataset):
     NumPointFeatures = 4
 
@@ -27,19 +28,13 @@ class KittiDataset(Dataset):
             infos = pickle.load(f)
         self._root_path = Path(root_path)
         self._kitti_infos = infos
+
         print("remain number of infos:", len(self._kitti_infos))
         self._class_names = class_names
         self._prep_func = prep_func
 
     def __len__(self):
         return len(self._kitti_infos)
-
-    @property
-    def ground_truth_annotations(self):
-        if "annos" not in self._kitti_infos[0]:
-            return None
-        gt_annos = [info["annos"] for info in self._kitti_infos]
-        return gt_annos
 
     def convert_detection_to_kitti_annos(self, detection):
         class_names = self._class_names
@@ -117,10 +112,25 @@ class KittiDataset(Dataset):
         detection
         When you want to eval your own dataset, you MUST set correct
         the z axis and box z center.
+        If you want to eval by my KITTI eval function, you must 
+        provide the correct format annotations.
+        ground_truth_annotations format:
+        {
+            bbox: [N, 4], if you fill fake data, MUST HAVE >25 HEIGHT!!!!!!
+            alpha: [N], you can use -10 to ignore it.
+            occluded: [N], you can use zero.
+            truncated: [N], you can use zero.
+            name: [N]
+            location: [N, 3] center of 3d box.
+            dimensions: [N, 3] dim of 3d box.
+            rotation_y: [N] angle.
+        }
+        all fields must be filled, but some fields can fill
+        zero.
         """
-        gt_annos = self.ground_truth_annotations
-        if gt_annos is None:
+        if "annos" not in self._kitti_infos[0]:
             return None
+        gt_annos = [info["annos"] for info in self._kitti_infos]
         dt_annos = self.convert_detection_to_kitti_annos(detections)
         # firstly convert standard detection to kitti-format dt annos
         z_axis = 1  # KITTI camera format use y as regular "z" axis.
@@ -188,8 +198,8 @@ class KittiDataset(Dataset):
             velo_path = Path(self._root_path) / pc_info['velodyne_path']
         velo_reduced_path = velo_path.parent.parent / (
             velo_path.parent.stem + '_reduced') / velo_path.name
-        # if velo_reduced_path.exists():
-        velo_path = velo_reduced_path
+        if velo_reduced_path.exists():
+            velo_path = velo_reduced_path
         points = np.fromfile(
             str(velo_path), dtype=np.float32,
             count=-1).reshape([-1, self.NumPointFeatures])

@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='second.protos',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x1bsecond/protos/anchors.proto\x12\rsecond.protos\"\xa7\x01\n\x15\x41nchorGeneratorStride\x12\x12\n\nclass_name\x18\x01 \x01(\t\x12\r\n\x05sizes\x18\x02 \x03(\x02\x12\x0f\n\x07strides\x18\x03 \x03(\x02\x12\x0f\n\x07offsets\x18\x04 \x03(\x02\x12\x11\n\trotations\x18\x05 \x03(\x02\x12\x19\n\x11matched_threshold\x18\x06 \x01(\x02\x12\x1b\n\x13unmatched_threshold\x18\x07 \x01(\x02\"\x9b\x01\n\x14\x41nchorGeneratorRange\x12\x12\n\nclass_name\x18\x01 \x01(\t\x12\r\n\x05sizes\x18\x02 \x03(\x02\x12\x15\n\ranchor_ranges\x18\x03 \x03(\x02\x12\x11\n\trotations\x18\x04 \x03(\x02\x12\x19\n\x11matched_threshold\x18\x05 \x01(\x02\x12\x1b\n\x13unmatched_threshold\x18\x06 \x01(\x02\"\xbf\x01\n\x19\x41nchorGeneratorCollection\x12G\n\x17\x61nchor_generator_stride\x18\x01 \x01(\x0b\x32$.second.protos.AnchorGeneratorStrideH\x00\x12\x45\n\x16\x61nchor_generator_range\x18\x02 \x01(\x0b\x32#.second.protos.AnchorGeneratorRangeH\x00\x42\x12\n\x10\x61nchor_generatorb\x06proto3')
+  serialized_pb=_b('\n\x1bsecond/protos/anchors.proto\x12\rsecond.protos\"r\n\x15\x41nchorGeneratorStride\x12\r\n\x05sizes\x18\x01 \x03(\x02\x12\x0f\n\x07strides\x18\x02 \x03(\x02\x12\x0f\n\x07offsets\x18\x03 \x03(\x02\x12\x11\n\trotations\x18\x04 \x03(\x02\x12\x15\n\rcustom_values\x18\x05 \x03(\x02\"f\n\x14\x41nchorGeneratorRange\x12\r\n\x05sizes\x18\x01 \x03(\x02\x12\x15\n\ranchor_ranges\x18\x02 \x03(\x02\x12\x11\n\trotations\x18\x03 \x03(\x02\x12\x15\n\rcustom_values\x18\x04 \x03(\x02\"\n\n\x08NoAnchorb\x06proto3')
 )
 
 
@@ -33,51 +33,37 @@ _ANCHORGENERATORSTRIDE = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='class_name', full_name='second.protos.AnchorGeneratorStride.class_name', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
+      name='sizes', full_name='second.protos.AnchorGeneratorStride.sizes', index=0,
+      number=1, type=2, cpp_type=6, label=3,
+      has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='sizes', full_name='second.protos.AnchorGeneratorStride.sizes', index=1,
+      name='strides', full_name='second.protos.AnchorGeneratorStride.strides', index=1,
       number=2, type=2, cpp_type=6, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='strides', full_name='second.protos.AnchorGeneratorStride.strides', index=2,
+      name='offsets', full_name='second.protos.AnchorGeneratorStride.offsets', index=2,
       number=3, type=2, cpp_type=6, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='offsets', full_name='second.protos.AnchorGeneratorStride.offsets', index=3,
+      name='rotations', full_name='second.protos.AnchorGeneratorStride.rotations', index=3,
       number=4, type=2, cpp_type=6, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='rotations', full_name='second.protos.AnchorGeneratorStride.rotations', index=4,
+      name='custom_values', full_name='second.protos.AnchorGeneratorStride.custom_values', index=4,
       number=5, type=2, cpp_type=6, label=3,
       has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='matched_threshold', full_name='second.protos.AnchorGeneratorStride.matched_threshold', index=5,
-      number=6, type=2, cpp_type=6, label=1,
-      has_default_value=False, default_value=float(0),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='unmatched_threshold', full_name='second.protos.AnchorGeneratorStride.unmatched_threshold', index=6,
-      number=7, type=2, cpp_type=6, label=1,
-      has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
@@ -93,8 +79,8 @@ _ANCHORGENERATORSTRIDE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=47,
-  serialized_end=214,
+  serialized_start=46,
+  serialized_end=160,
 )
 
 
@@ -106,47 +92,33 @@ _ANCHORGENERATORRANGE = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='class_name', full_name='second.protos.AnchorGeneratorRange.class_name', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
+      name='sizes', full_name='second.protos.AnchorGeneratorRange.sizes', index=0,
+      number=1, type=2, cpp_type=6, label=3,
+      has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='sizes', full_name='second.protos.AnchorGeneratorRange.sizes', index=1,
+      name='anchor_ranges', full_name='second.protos.AnchorGeneratorRange.anchor_ranges', index=1,
       number=2, type=2, cpp_type=6, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='anchor_ranges', full_name='second.protos.AnchorGeneratorRange.anchor_ranges', index=2,
+      name='rotations', full_name='second.protos.AnchorGeneratorRange.rotations', index=2,
       number=3, type=2, cpp_type=6, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='rotations', full_name='second.protos.AnchorGeneratorRange.rotations', index=3,
+      name='custom_values', full_name='second.protos.AnchorGeneratorRange.custom_values', index=3,
       number=4, type=2, cpp_type=6, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='matched_threshold', full_name='second.protos.AnchorGeneratorRange.matched_threshold', index=4,
-      number=5, type=2, cpp_type=6, label=1,
-      has_default_value=False, default_value=float(0),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='unmatched_threshold', full_name='second.protos.AnchorGeneratorRange.unmatched_threshold', index=5,
-      number=6, type=2, cpp_type=6, label=1,
-      has_default_value=False, default_value=float(0),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -159,32 +131,18 @@ _ANCHORGENERATORRANGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=217,
-  serialized_end=372,
+  serialized_start=162,
+  serialized_end=264,
 )
 
 
-_ANCHORGENERATORCOLLECTION = _descriptor.Descriptor(
-  name='AnchorGeneratorCollection',
-  full_name='second.protos.AnchorGeneratorCollection',
+_NOANCHOR = _descriptor.Descriptor(
+  name='NoAnchor',
+  full_name='second.protos.NoAnchor',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
-    _descriptor.FieldDescriptor(
-      name='anchor_generator_stride', full_name='second.protos.AnchorGeneratorCollection.anchor_generator_stride', index=0,
-      number=1, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='anchor_generator_range', full_name='second.protos.AnchorGeneratorCollection.anchor_generator_range', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -196,25 +154,14 @@ _ANCHORGENERATORCOLLECTION = _descriptor.Descriptor(
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
-    _descriptor.OneofDescriptor(
-      name='anchor_generator', full_name='second.protos.AnchorGeneratorCollection.anchor_generator',
-      index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=375,
-  serialized_end=566,
+  serialized_start=266,
+  serialized_end=276,
 )
 
-_ANCHORGENERATORCOLLECTION.fields_by_name['anchor_generator_stride'].message_type = _ANCHORGENERATORSTRIDE
-_ANCHORGENERATORCOLLECTION.fields_by_name['anchor_generator_range'].message_type = _ANCHORGENERATORRANGE
-_ANCHORGENERATORCOLLECTION.oneofs_by_name['anchor_generator'].fields.append(
-  _ANCHORGENERATORCOLLECTION.fields_by_name['anchor_generator_stride'])
-_ANCHORGENERATORCOLLECTION.fields_by_name['anchor_generator_stride'].containing_oneof = _ANCHORGENERATORCOLLECTION.oneofs_by_name['anchor_generator']
-_ANCHORGENERATORCOLLECTION.oneofs_by_name['anchor_generator'].fields.append(
-  _ANCHORGENERATORCOLLECTION.fields_by_name['anchor_generator_range'])
-_ANCHORGENERATORCOLLECTION.fields_by_name['anchor_generator_range'].containing_oneof = _ANCHORGENERATORCOLLECTION.oneofs_by_name['anchor_generator']
 DESCRIPTOR.message_types_by_name['AnchorGeneratorStride'] = _ANCHORGENERATORSTRIDE
 DESCRIPTOR.message_types_by_name['AnchorGeneratorRange'] = _ANCHORGENERATORRANGE
-DESCRIPTOR.message_types_by_name['AnchorGeneratorCollection'] = _ANCHORGENERATORCOLLECTION
+DESCRIPTOR.message_types_by_name['NoAnchor'] = _NOANCHOR
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 AnchorGeneratorStride = _reflection.GeneratedProtocolMessageType('AnchorGeneratorStride', (_message.Message,), dict(
@@ -231,12 +178,12 @@ AnchorGeneratorRange = _reflection.GeneratedProtocolMessageType('AnchorGenerator
   ))
 _sym_db.RegisterMessage(AnchorGeneratorRange)
 
-AnchorGeneratorCollection = _reflection.GeneratedProtocolMessageType('AnchorGeneratorCollection', (_message.Message,), dict(
-  DESCRIPTOR = _ANCHORGENERATORCOLLECTION,
+NoAnchor = _reflection.GeneratedProtocolMessageType('NoAnchor', (_message.Message,), dict(
+  DESCRIPTOR = _NOANCHOR,
   __module__ = 'second.protos.anchors_pb2'
-  # @@protoc_insertion_point(class_scope:second.protos.AnchorGeneratorCollection)
+  # @@protoc_insertion_point(class_scope:second.protos.NoAnchor)
   ))
-_sym_db.RegisterMessage(AnchorGeneratorCollection)
+_sym_db.RegisterMessage(NoAnchor)
 
 
 # @@protoc_insertion_point(module_scope)

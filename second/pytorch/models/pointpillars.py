@@ -13,7 +13,7 @@ from second.pytorch.models.voxel_encoder import get_paddings_indicator, register
 from second.pytorch.models.middle import register_middle
 from torchplus.nn import Empty
 from torchplus.tools import change_default_args
-import numpy as np 
+import numpy as np
 
 class PFNLayer(nn.Module):
     def __init__(self,

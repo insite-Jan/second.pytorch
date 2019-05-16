@@ -603,7 +603,7 @@ def noise_per_object_v3_(gt_boxes,
         ]
     enable_grot = np.abs(global_random_rot_range[0] -
                          global_random_rot_range[1]) >= 1e-3
-    
+
     if not isinstance(center_noise_std, (list, tuple, np.ndarray)):
         center_noise_std = [
             center_noise_std, center_noise_std, center_noise_std
@@ -794,7 +794,7 @@ def global_rotation_v2(gt_boxes, points, min_rad=-np.pi / 4,
             [[rot_cos, -rot_sin], [rot_sin, rot_cos]],
             dtype=points.dtype)
 
-        gt_boxes[:, 7:9] = gt_boxes[:, 7:9] @ rot_mat_T
+        gt_boxes[:, 7:9] = np.dot(gt_boxes[:, 7:9], rot_mat_T)
 
     return gt_boxes, points
 

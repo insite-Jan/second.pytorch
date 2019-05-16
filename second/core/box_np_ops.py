@@ -48,8 +48,12 @@ def second_box_encode(boxes,
     box_ndim = anchors.shape[-1]
     cas, cgs = [], []
     if box_ndim > 7:
-        xa, ya, za, wa, la, ha, ra, *cas = np.split(anchors, box_ndim, axis=1)
-        xg, yg, zg, wg, lg, hg, rg, *cgs = np.split(boxes, box_ndim, axis=1)
+        allcas = np.split(anchors, box_ndim, axis=1)
+        xa, ya, za, wa, la, ha, ra = allcas[:7]
+        cas = allcas[7:]
+        allcgs = np.split(boxes, box_ndim, axis=1)
+        xg, yg, zg, wg, lg, hg, rg = allcgs[:7]
+        cgs = cgs[7:]
     else:
         xa, ya, za, wa, la, ha, ra = np.split(anchors, box_ndim, axis=1)
         xg, yg, zg, wg, lg, hg, rg = np.split(boxes, box_ndim, axis=1)
@@ -78,10 +82,12 @@ def second_box_encode(boxes,
         ray = np.sin(ra)
         rtx = rgx - rax
         rty = rgy - ray
-        return np.concatenate([xt, yt, zt, wt, lt, ht, rtx, rty, *cts], axis=1)
+        cts = np.concatenate(cts, axis=1)
+        return np.concatenate([xt, yt, zt, wt, lt, ht, rtx, rty, cts], axis=1)
     else:
         rt = rg - ra
-        return np.concatenate([xt, yt, zt, wt, lt, ht, rt, *cts], axis=1)
+        cts = np.concatenate(cts, axis=1)
+        return np.concatenate([xt, yt, zt, wt, lt, ht, rt, cts], axis=1)
 
 
 
@@ -98,11 +104,17 @@ def second_box_decode(box_encodings,
     box_ndim = anchors.shape[-1]
     cas, cts = [], []
     if box_ndim > 7:
-        xa, ya, za, wa, la, ha, ra, *cas = np.split(anchors, box_ndim, axis=-1)
+        allcas = np.split(anchors, box_ndim, axis=-1)
+        xa, ya, za, wa, la, ha, ra = allcas[:7]
+        cas = allcas[7:]
         if encode_angle_to_vector:
-            xt, yt, zt, wt, lt, ht, rtx, rty, *cts = np.split(box_encodings, box_ndim + 1, axis=-1)
+            allcts = np.split(box_encodings, box_ndim + 1, axis=-1)
+            xt, yt, zt, wt, lt, ht, rtx, rty = allcas[:8]
+            cts = allcts[8:]
         else:
-            xt, yt, zt, wt, lt, ht, rt, *cts = np.split(box_encodings, box_ndim, axis=-1)
+            allcts = np.split(box_encodings, box_ndim, axis=-1)
+            xt, yt, zt, wt, lt, ht, rt = allcts[:7]
+            cts = allcts[7:]
     else:
         xa, ya, za, wa, la, ha, ra = np.split(anchors, box_ndim, axis=-1)
         if encode_angle_to_vector:
@@ -131,7 +143,8 @@ def second_box_decode(box_encodings,
     else:
         rg = rt + ra
     cgs = [t + a for t, a in zip(cts, cas)]
-    return np.concatenate([xg, yg, zg, wg, lg, hg, rg, *cgs], axis=-1)
+    cgs = np.concatenate(cgs, axis=1)
+    return np.concatenate([xg, yg, zg, wg, lg, hg, rg, cgs], axis=-1)
 
 
 def bev_box_encode(boxes,

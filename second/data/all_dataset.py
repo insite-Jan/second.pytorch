@@ -152,7 +152,7 @@ def create_groundtruth_database_parallel(dataset_class_name,
         num_obj = gt_boxes.shape[0]
         point_indices = box_np_ops.points_in_rbbox(points, gt_boxes)
         for i in range(num_obj):
-            filename = f"{image_idx}_{names[i]}_{i}.bin"
+            filename = "{}_{}_{}.bin".format(image_idx, names[i], i)
             filepath = database_save_path / filename
             gt_points = points[point_indices[:, i]]
 
@@ -188,7 +188,7 @@ def create_groundtruth_database_parallel(dataset_class_name,
                 else:
                     all_db_infos[names[i]] = [db_info]
     for k, v in all_db_infos.items():
-        print(f"load {len(v)} {k} database infos")
+        print("load {} {} database infos".format(len(v), k))
 
     with open(db_info_save_path, 'wb') as f:
         pickle.dump(all_db_infos, f)

@@ -327,7 +327,7 @@ class NuScenesDataset(Dataset):
                 velocity = box.velocity[:2].tolist()
                 if len(token2info[det["metadata"]["token"]]["sweeps"]) == 0:
                     velocity = (np.nan, np.nan)
-                box.velocity = np.array([*velocity, 0.0])
+                box.velocity = np.array(*(velocity + [0.0]))
             boxes = _lidar_nusc_box_to_global(
                 token2info[det["metadata"]["token"]], boxes,
                 mapped_class_names, "cvpr_2019")
@@ -550,7 +550,7 @@ def _second_det_to_nusc_box(detection):
         quat = pyquaternion.Quaternion(axis=[0, 0, 1], radians=box3d[i, 6])
         velocity = (np.nan, np.nan, np.nan)
         if box3d.shape[1] == 9:
-            velocity = (*box3d[i, 7:9], 0.0)
+            velocity = (box3d[i, 7:9].tolist() + [0.0])
             # velo_val = np.linalg.norm(box3d[i, 7:9])
             # velo_ori = box3d[i, 6]
             # velocity = (velo_val * np.cos(velo_ori), velo_val * np.sin(velo_ori), 0.0)
@@ -707,9 +707,9 @@ def _fill_trainval_infos(nusc,
                 [nusc.box_velocity(token)[:2] for token in sample['anns']])
             # convert velo from global to lidar
             for i in range(len(boxes)):
-                velo = np.array([*velocity[i], 0.0])
-                velo = velo @ np.linalg.inv(e2g_r_mat).T @ np.linalg.inv(
-                    l2e_r_mat).T
+                velo = np.array(velocity[i].tolist() + [0.0])
+                velo = np.dot(np.dot(velo, np.linalg.inv(e2g_r_mat).T), np.linalg.inv(
+                    l2e_r_mat).T)
                 velocity[i] = velo[:2]
 
             names = [b.name for b in boxes]

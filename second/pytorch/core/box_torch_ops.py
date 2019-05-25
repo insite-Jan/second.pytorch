@@ -22,8 +22,14 @@ def second_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=F
     box_ndim = anchors.shape[-1]
     cas, cgs = [], []
     if box_ndim > 7:
-        xa, ya, za, wa, la, ha, ra, *cas = torch.split(anchors, 1, dim=-1)
-        xg, yg, zg, wg, lg, hg, rg, *cgs = torch.split(boxes, 1, dim=-1)
+        # xa, ya, za, wa, la, ha, ra, *cas = torch.split(anchors, 1, dim=-1)
+        # xg, yg, zg, wg, lg, hg, rg, *cgs = torch.split(boxes, 1, dim=-1)
+        allcas = np.split(anchors, box_ndim, axis=1)
+        xa, ya, za, wa, la, ha, ra = allcas[:7]
+        cas = allcas[7:]
+        allcgs = np.split(boxes, box_ndim, axis=1)
+        xg, yg, zg, wg, lg, hg, rg = allcgs[:7]
+        cgs = cgs[7:]
     else:
         xa, ya, za, wa, la, ha, ra = torch.split(anchors, 1, dim=-1)
         xg, yg, zg, wg, lg, hg, rg = torch.split(boxes, 1, dim=-1)
@@ -48,10 +54,14 @@ def second_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=F
         ray = torch.sin(ra)
         rtx = rgx - rax
         rty = rgy - ray
-        return torch.cat([xt, yt, zt, wt, lt, ht, rtx, rty, *cts], dim=-1)
+        oldsyntaxcts = [xt, yt, zt, wt, lt, ht, rtx, rty] + cts
+        #[xt, yt, zt, wt, lt, ht, rtx, rty, *cts]
+        return torch.cat(oldsyntaxcts, dim=-1)
     else:
         rt = rg - ra
-        return torch.cat([xt, yt, zt, wt, lt, ht, rt, *cts], dim=-1)
+        oldsyntaxcts = [xt, yt, zt, wt, lt, ht, rt] + cts
+        # [xt, yt, zt, wt, lt, ht, rt, *cts]
+        return torch.cat(oldsyntaxcts, dim=-1)
 
 
 def second_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smooth_dim=False):
@@ -63,12 +73,21 @@ def second_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smoo
     box_ndim = anchors.shape[-1]
     cas, cts = [], []
     if box_ndim > 7:
-        xa, ya, za, wa, la, ha, ra, *cas = torch.split(anchors, 1, dim=-1)
+        # xa, ya, za, wa, la, ha, ra, *cas = torch.split(anchors, 1, dim=-1)
+        allcas = np.split(anchors, box_ndim, axis=1)
+        xa, ya, za, wa, la, ha, ra = allcas[:7]
+        cas = allcas[7:]
         if encode_angle_to_vector:
-            xt, yt, zt, wt, lt, ht, rtx, rty, *cts = torch.split(
-                box_encodings, 1, dim=-1)
+            # xt, yt, zt, wt, lt, ht, rtx, rty, *cts = torch.split(
+                # box_encodings, 1, dim=-1)
+            allcts = torch.split(box_encodings, 1, dim=-1)
+            xt, yt, zt, wt, lt, ht, rtx, rty = allcts[:8]
+            cts = allcts[8:]
         else:
-            xt, yt, zt, wt, lt, ht, rt, *cts = torch.split(box_encodings, 1, dim=-1)
+            # xt, yt, zt, wt, lt, ht, rt, *cts = torch.split(box_encodings, 1, dim=-1)
+            allcts = torch.split(box_encodings, 1, dim=-1)
+            xt, yt, zt, wt, lt, ht, rtx, rty = allcts[:7]
+            cts = allcts[7:]
     else:
         xa, ya, za, wa, la, ha, ra = torch.split(anchors, 1, dim=-1)
         if encode_angle_to_vector:
@@ -100,7 +119,9 @@ def second_box_decode(box_encodings, anchors, encode_angle_to_vector=False, smoo
     else:
         rg = rt + ra
     cgs = [t + a for t, a in zip(cts, cas)]
-    return torch.cat([xg, yg, zg, wg, lg, hg, rg, *cgs], dim=-1)
+    oldsyntaxcgs = [xg, yg, zg, wg, lg, hg, rg] + cgs
+    # [xg, yg, zg, wg, lg, hg, rg, *cgs]
+    return torch.cat(oldsyntaxcgs, dim=-1)
 
 def bev_box_encode(boxes, anchors, encode_angle_to_vector=False, smooth_dim=False):
     """box encode for VoxelNet

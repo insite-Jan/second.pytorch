@@ -15,7 +15,7 @@ from second.pytorch.train import predict_to_kitti_label, example_convert_to_torc
 
 class TorchInferenceContext(InferenceContext):
     def __init__(self):
-        super().__init__()
+        super(TorchInferenceContext, self).__init__()
         self.net = None
         self.anchor_cache = None
 

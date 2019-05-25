@@ -1,5 +1,5 @@
 """PyTorch edition of TensorFlow learning schedule in tensorflow object
-detection API. 
+detection API.
 """
 import numpy as np
 from torch.optim.optimizer import Optimizer
@@ -46,7 +46,7 @@ class _LRSchedulerStep(object):
 
 class Constant(_LRSchedulerStep):
     def __init__(self, optimizer, last_step=-1):
-        super().__init__(optimizer, last_step)
+        super(Constant, self).__init__(optimizer, last_step)
 
     def _get_lr_per_group(self, base_lr):
         return base_lr
@@ -74,7 +74,7 @@ class ManualStepping(_LRSchedulerStep):
         if len(rates) != len(boundaries) + 1:
             raise ValueError('Number of provided learning rates must exceed '
                              'number of boundary points by exactly 1.')
-        super().__init__(optimizer, last_step)
+        super(ManualStepping, self).__init__(optimizer, last_step)
 
     def _get_lr_per_group(self, base_lr):
         step = self.last_step
@@ -103,7 +103,7 @@ class ExponentialDecayWithBurnin(_LRSchedulerStep):
         self._burnin_learning_rate = burnin_learning_rate
         self._burnin_steps = burnin_steps
 
-        super().__init__(optimizer, last_step)
+        super(ExponentialDecayWithBurnin, self).__init__(optimizer, last_step)
 
     def _get_lr_per_group(self, base_lr):
         if self._burnin_learning_rate == 0:
@@ -128,7 +128,7 @@ class ExponentialDecay(_LRSchedulerStep):
         self._decay_factor = learning_rate_decay_factor
         self._staircase = staircase
 
-        super().__init__(optimizer, last_step)
+        super(ExponentialDecay, self).__init__(optimizer, last_step)
 
     def _get_lr_per_group(self, base_lr):
         step = self.last_step
@@ -156,7 +156,7 @@ class CosineDecayWithWarmup(_LRSchedulerStep):
         self._warmup_learning_rate = warmup_learning_rate
         self._warmup_steps = warmup_steps
 
-        super().__init__(optimizer, last_step)
+        super(CosineDecayWithWarmup, self).__init__(optimizer, last_step)
 
     def _get_lr_per_group(self, base_lr):
         if base_lr < self._warmup_learning_rate:
@@ -197,7 +197,7 @@ class OneCycle(_LRSchedulerStep):
         self._warmup_learning_rate = warmup_learning_rate
         self._warmup_steps = warmup_steps
 
-        super().__init__(optimizer, last_step)
+        super(OneCycle, self).__init__(optimizer, last_step)
 
     def _get_lr_per_group(self, base_lr):
         if base_lr < self._warmup_learning_rate:

@@ -15,13 +15,13 @@ def register_vfe(cls, name=None):
     global REGISTERED_VFE_CLASSES
     if name is None:
         name = cls.__name__
-    assert name not in REGISTERED_VFE_CLASSES, f"exist class: {REGISTERED_VFE_CLASSES}"
+    assert name not in REGISTERED_VFE_CLASSES, "exist class: {}".format(REGISTERED_VFE_CLASSES)
     REGISTERED_VFE_CLASSES[name] = cls
     return cls
 
 def get_vfe_class(name):
     global REGISTERED_VFE_CLASSES
-    assert name in REGISTERED_VFE_CLASSES, f"available class: {REGISTERED_VFE_CLASSES}"
+    assert name in REGISTERED_VFE_CLASSES, "available class: {}".format(REGISTERED_VFE_CLASSES)
     return REGISTERED_VFE_CLASSES[name]
 
 

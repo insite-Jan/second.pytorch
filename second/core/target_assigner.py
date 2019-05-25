@@ -189,7 +189,7 @@ class TargetAssigner:
                 fsize = feature_map_size
                 self._feature_map_sizes[idx] = feature_map_size
             anchors = anchor_generator.generate(fsize)
-            anchors = anchors.reshape([*np.append(np.append(fsize, -1), self.box_ndim)])
+            anchors = anchors.reshape(np.append(np.append(fsize, -1), self.box_ndim))
             anchors = anchors.transpose(*([ndim] + range(0, ndim) + [ndim + 1]))
             anchors_list.append(anchors.reshape(-1, self.box_ndim))
             num_anchors = np.prod(anchors.shape[:-1])
@@ -233,7 +233,7 @@ class TargetAssigner:
                 self._feature_map_sizes[idx] = feature_map_size
 
             anchors = anchor_generator.generate(fsize)
-            anchors = anchors.reshape([*np.append(np.append(fsize, -1), self.box_ndim)])
+            anchors = anchors.reshape(np.append(np.append(fsize, -1), self.box_ndim))
             anchors = anchors.transpose(*([ndim] + range(0, ndim) + [ndim + 1]))
             num_anchors = np.prod(anchors.shape[:-1])
             match_list.append(
@@ -277,7 +277,7 @@ class TargetAssigner:
             anchor_ranges.append((num_anchors, num_anchors + self.num_anchors(name)))
             num_anchors += anchor_ranges[-1][1] - num_anchors
         return anchor_ranges[self._classes.index(class_name)]
-        
+
     def num_anchors_per_location_class(self, class_name):
         if isinstance(class_name, int):
             class_name = self._classes[class_name]

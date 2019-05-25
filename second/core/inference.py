@@ -9,7 +9,7 @@ from second.data.preprocess import merge_second_batch, prep_pointcloud
 from second.protos import pipeline_pb2
 import second.data.kitti_common as kitti
 
-class InferenceContext:
+class InferenceContext(object):
     def __init__(self):
         self.config = None
         self.root_path = None

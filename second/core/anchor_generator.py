@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 from second.core import box_np_ops
 
-class AnchorGenerator:
+class AnchorGenerator(object):
     @property
     def class_name(self):
         raise NotImplementedError
@@ -14,7 +14,7 @@ class AnchorGenerator:
     def generate(self, feature_map_size):
         raise NotImplementedError
 
-    @property 
+    @property
     def ndim(self):
         raise NotImplementedError
 
@@ -30,7 +30,7 @@ class AnchorGeneratorStride(AnchorGenerator):
                  unmatch_threshold=-1,
                  custom_values=(),
                  dtype=np.float32):
-        super().__init__()
+        super(AnchorGeneratorStride, self).__init__()
         self._sizes = sizes
         self._anchor_strides = anchor_strides
         self._anchor_offsets = anchor_offsets
@@ -57,16 +57,16 @@ class AnchorGeneratorStride(AnchorGenerator):
             self._anchor_offsets, self._rotations, self._dtype)
         if len(self._custom_values) > 0:
             custom_ndim = len(self._custom_values)
-            custom = np.zeros([*res.shape[:-1], custom_ndim])
+            custom = np.zeros(res.shape[:-1] + (custom_ndim,))
             custom[:] = self._custom_values
             res = np.concatenate([res, custom], axis=-1)
         return res
 
-    @property 
+    @property
     def ndim(self):
         return 7 + len(self._custom_values)
 
-    @property 
+    @property
     def custom_ndim(self):
         return len(self._custom_values)
 
@@ -80,7 +80,7 @@ class AnchorGeneratorRange(AnchorGenerator):
                  unmatch_threshold=-1,
                  custom_values=(),
                  dtype=np.float32):
-        super().__init__()
+        super(AnchorGeneratorRange, self).__init__()
         self._sizes = sizes
         self._anchor_ranges = anchor_ranges
         self._rotations = rotations
@@ -107,15 +107,15 @@ class AnchorGeneratorRange(AnchorGenerator):
 
         if len(self._custom_values) > 0:
             custom_ndim = len(self._custom_values)
-            custom = np.zeros([*res.shape[:-1], custom_ndim])
+            custom = np.zeros(res.shape[:-1] + (custom_ndim,))
             custom[:] = self._custom_values
             res = np.concatenate([res, custom], axis=-1)
         return res
 
-    @property 
+    @property
     def ndim(self):
         return 7 + len(self._custom_values)
 
-    @property 
+    @property
     def custom_ndim(self):
         return len(self._custom_values)

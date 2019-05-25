@@ -177,7 +177,7 @@ class PillarFeatureNet(nn.Module):
         :param pc_range: (<float>: 6). Point cloud range, only utilize x and y min.
         """
 
-        super().__init__()
+        super(PillarFeatureNet, self).__init__()
         self.name = 'PillarFeatureNetOld'
         assert len(num_filters) > 0
         num_input_features += 5
@@ -263,7 +263,7 @@ class PillarFeatureNetRadius(nn.Module):
         :param pc_range: (<float>: 6). Point cloud range, only utilize x and y min.
         """
 
-        super().__init__()
+        super(PillarFeatureNetRadius, self).__init__()
         self.name = 'PillarFeatureNetRadius'
         assert len(num_filters) > 0
         num_input_features += 5
@@ -351,7 +351,7 @@ class PillarFeatureNetRadiusHeight(nn.Module):
         :param pc_range: (<float>: 6). Point cloud range, only utilize x and y min.
         """
 
-        super().__init__()
+        super(PillarFeatureNetRadiusHeight, self).__init__()
         self.name = 'PillarFeatureNetRadiusHeight'
         assert len(num_filters) > 0
         num_input_features += 6

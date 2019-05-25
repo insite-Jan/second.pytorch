@@ -10,8 +10,13 @@ class LRSchedulerStep(object):
         self.total_step = total_step
         self.lr_phases = []
 
+        # print(lr_phases)
         for i, (start, lambda_func) in enumerate(lr_phases):
             if len(self.lr_phases) != 0:
+                # print("asd")
+                # print(self.lr_phases)
+                # print(start)
+                # print(total_step)
                 assert self.lr_phases[-1][0] < int(start * total_step)
             if isinstance(lambda_func, str):
                 lambda_func = eval(lambda_func)
@@ -55,9 +60,9 @@ class LRSchedulerStep(object):
         if len(moms) > 0:
             self.optimizer.mom = moms[-1]
 
-    @property 
+    @property
     def learning_rate(self):
-        return self.optimizer.lr 
+        return self.optimizer.lr
 
 def annealing_cos(start, end, pct):
     # print(pct, start, end)
@@ -109,7 +114,7 @@ class ExponentialDecay(LRSchedulerStep):
         if staircase:
             while step <= total_step:
                 func = lambda p, _d=initial_learning_rate * stage: _d
-                lr_phases.append((step / total_step, func))
+                lr_phases.append((float(step) / total_step, func))
                 stage *= decay_factor
                 step += int(decay_length * total_step)
         else:

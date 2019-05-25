@@ -40,13 +40,13 @@ def register_voxelnet(cls, name=None):
     global REGISTERED_NETWORK_CLASSES
     if name is None:
         name = cls.__name__
-    assert name not in REGISTERED_NETWORK_CLASSES, f"exist class: {REGISTERED_NETWORK_CLASSES}"
+    assert name not in REGISTERED_NETWORK_CLASSES, "exist class: {}".format(REGISTERED_NETWORK_CLASSES)
     REGISTERED_NETWORK_CLASSES[name] = cls
     return cls
 
 def get_voxelnet_class(name):
     global REGISTERED_NETWORK_CLASSES
-    assert name in REGISTERED_NETWORK_CLASSES, f"available class: {REGISTERED_NETWORK_CLASSES}"
+    assert name in REGISTERED_NETWORK_CLASSES, "available class: {}".format(REGISTERED_NETWORK_CLASSES)
     return REGISTERED_NETWORK_CLASSES[name]
 
 class LossNormType(Enum):
@@ -316,7 +316,7 @@ class VoxelNet(nn.Module):
         """this function is used for subclass.
         you can add custom network architecture by subclass VoxelNet class
         and override this function.
-        Returns: 
+        Returns:
             preds_dict: {
                 box_preds: ...
                 cls_preds: ...
@@ -364,7 +364,7 @@ class VoxelNet(nn.Module):
         preds_dict = self.network_forward(voxels, num_points, coors, batch_size_dev)
         # need to check size.
         box_preds = preds_dict["box_preds"].view(batch_size_dev, -1, self._box_coder.code_size)
-        err_msg = f"num_anchors={batch_anchors.shape[1]}, but num_output={box_preds.shape[1]}. please check size"
+        err_msg = "num_anchors={}, but num_output={}. please check size".format(batch_anchors.shape[1], box_preds.shape[1])
         assert batch_anchors.shape[1] == box_preds.shape[1], err_msg
         if self.training:
             return self.loss(example, preds_dict)

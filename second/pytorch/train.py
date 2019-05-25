@@ -5,7 +5,7 @@ from pathlib import Path
 import pickle
 import shutil
 import time
-import re 
+import re
 import fire
 import numpy as np
 import torch
@@ -72,7 +72,7 @@ def _worker_init_fn(worker_id):
     np.random.seed(time_seed + worker_id)
     print("WORKER {} seed:".format(worker_id), np.random.get_state()[1][0])
 
-def freeze_params(params: dict, include: str=None, exclude: str=None):
+def freeze_params(params, include=None, exclude=None):
     assert isinstance(params, dict)
     include_re = None
     if include is not None:
@@ -84,14 +84,14 @@ def freeze_params(params: dict, include: str=None, exclude: str=None):
     for k, p in params.items():
         if include_re is not None:
             if include_re.match(k) is not None:
-                continue 
+                continue
         if exclude_re is not None:
             if exclude_re.match(k) is None:
-                continue 
+                continue
         remain_params.append(p)
     return remain_params
 
-def freeze_params_v2(params: dict, include: str=None, exclude: str=None):
+def freeze_params_v2(params, include=None, exclude=None):
     assert isinstance(params, dict)
     include_re = None
     if include is not None:
@@ -107,7 +107,7 @@ def freeze_params_v2(params: dict, include: str=None, exclude: str=None):
             if exclude_re.match(k) is None:
                 p.requires_grad = False
 
-def filter_param_dict(state_dict: dict, include: str=None, exclude: str=None):
+def filter_param_dict(state_dict, include=None, exclude=None):
     assert isinstance(state_dict, dict)
     include_re = None
     if include is not None:
@@ -122,7 +122,7 @@ def filter_param_dict(state_dict: dict, include: str=None, exclude: str=None):
                 continue
         if exclude_re is not None:
             if exclude_re.match(k) is not None:
-                continue 
+                continue
         res_dict[k] = p
     return res_dict
 
@@ -207,11 +207,11 @@ def train(config_path,
         new_pretrained_dict = {}
         for k, v in pretrained_dict.items():
             if k in model_dict and v.shape == model_dict[k].shape:
-                new_pretrained_dict[k] = v        
+                new_pretrained_dict[k] = v
         print("Load pretrained parameters:")
         for k, v in new_pretrained_dict.items():
             print(k, v.shape)
-        model_dict.update(new_pretrained_dict) 
+        model_dict.update(new_pretrained_dict)
         net.load_state_dict(model_dict)
         freeze_params_v2(dict(net.named_parameters()), freeze_include, freeze_exclude)
         net.clear_global_step()
@@ -254,7 +254,7 @@ def train(config_path,
     print(train_cfg)
     if multi_gpu:
         num_gpu = torch.cuda.device_count()
-        print(f"MULTI-GPU: use {num_gpu} gpu")
+        print("MULTI-GPU: use {} gpu".format(num_gpu))
         collate_fn = merge_second_batch_multigpu
     else:
         collate_fn = merge_second_batch
@@ -309,6 +309,7 @@ def train(config_path,
     amp_optimizer.zero_grad()
     step_times = []
     step = start_step
+    example = None
     try:
         while True:
             if clear_metrics_every_epoch:
@@ -330,7 +331,7 @@ def train(config_path,
                 cls_neg_loss = ret_dict["cls_neg_loss"].mean()
                 loc_loss = ret_dict["loc_loss"]
                 cls_loss = ret_dict["cls_loss"]
-                
+
                 cared = ret_dict["cared"]
                 labels = example_torch["labels"]
                 if train_cfg.enable_mixed_precision:
@@ -361,7 +362,7 @@ def train(config_path,
                 if global_step % display_step == 0:
                     if measure_time:
                         for name, val in net.get_avg_time_dict().items():
-                            print(f"avg {name} time = {val * 1000:.3f} ms")
+                            print("avg {} time = {:.3f} ms".format(name, val * 1000))
 
                     loc_loss_elem = [
                         float(loc_loss[:, :, i].sum().detach().cpu().numpy() /
@@ -437,9 +438,11 @@ def train(config_path,
             if step >= total_step:
                 break
     except Exception as e:
-        print(json.dumps(example["metadata"], indent=2))
         model_logging.log_text(str(e), step)
-        model_logging.log_text(json.dumps(example["metadata"], indent=2), step)
+        # if example is not None:
+        #     jsondump = json.dumps(list(example["metadata"]), indent=2)
+        #     print(jsondump)
+        #     model_logging.log_text(jsondump, step)
         torchplus.train.save_models(model_dir, [net, amp_optimizer],
                                     step)
         raise e
@@ -572,7 +575,7 @@ def evaluate(config_path,
 
 def helper_tune_target_assigner(config_path, target_rate=None, update_freq=200, update_delta=0.01, num_tune_epoch=5):
     """get information of target assign to tune thresholds in anchor generator.
-    """    
+    """
     if isinstance(config_path, str):
         # directly provide a config object. this usually used
         # when you want to train with several different parameters in
@@ -614,7 +617,7 @@ def helper_tune_target_assigner(config_path, target_rate=None, update_freq=200, 
         collate_fn=merge_second_batch,
         worker_init_fn=_worker_init_fn,
         drop_last=False)
-    
+
     class_count = {}
     anchor_count = {}
     class_count_tune = {}
@@ -635,7 +638,7 @@ def helper_tune_target_assigner(config_path, target_rate=None, update_freq=200, 
             gt_names = example["gt_names"]
             for name in gt_names:
                 class_count_tune[name] += 1
-            
+
             labels = example['labels']
             for i in range(1, len(classes) + 1):
                 anchor_count_tune[classes[i - 1]] += int(np.sum(labels == i))
@@ -666,7 +669,7 @@ def helper_tune_target_assigner(config_path, target_rate=None, update_freq=200, 
 
         for name in gt_names:
             class_count[name] += 1
-        
+
         labels = example['labels']
         for i in range(1, len(classes) + 1):
             anchor_count[classes[i - 1]] += int(np.sum(labels == i))

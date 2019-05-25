@@ -16,13 +16,13 @@ def register_rpn(cls, name=None):
     global REGISTERED_RPN_CLASSES
     if name is None:
         name = cls.__name__
-    assert name not in REGISTERED_RPN_CLASSES, f"exist class: {REGISTERED_RPN_CLASSES}"
+    assert name not in REGISTERED_RPN_CLASSES, "exist class: {}".format(REGISTERED_RPN_CLASSES)
     REGISTERED_RPN_CLASSES[name] = cls
     return cls
 
 def get_rpn_class(name):
     global REGISTERED_RPN_CLASSES
-    assert name in REGISTERED_RPN_CLASSES, f"available class: {REGISTERED_RPN_CLASSES}"
+    assert name in REGISTERED_RPN_CLASSES, "available class: {}".format(REGISTERED_RPN_CLASSES)
     return REGISTERED_RPN_CLASSES[name]
 
 @register_rpn
@@ -325,9 +325,9 @@ class RPNNoHeadBase(nn.Module):
             x = torch.cat(ups, dim=1)
         res = {}
         for i, up in enumerate(ups):
-            res[f"up{i}"] = up
+            res["up{}".format(i)] = up
         for i, out in enumerate(stage_outputs):
-            res[f"stage{i}"] = out
+            res["stage{}".format(i)] = out
         res["out"] = x
         return res
 
@@ -392,7 +392,7 @@ class RPNBase(RPNNoHeadBase):
                 final_num_filters, num_anchor_per_loc * num_direction_bins, 1)
 
     def forward(self, x):
-        res = super().forward(x)
+        res = super(RPNBase, self).forward(x)
         x = res["out"]
         box_preds = self.conv_box(x)
         cls_preds = self.conv_cls(x)

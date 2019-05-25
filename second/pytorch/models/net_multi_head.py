@@ -15,7 +15,7 @@ class SmallObjectHead(nn.Module):
     def __init__(self, num_filters, num_class, num_anchor_per_loc,
                  box_code_size, num_direction_bins, use_direction_classifier,
                  encode_background_as_zeros):
-        super().__init__()
+        super(SmallObjectHead, self).__init__()
         self._num_anchor_per_loc = num_anchor_per_loc
         self._num_direction_bins = num_direction_bins
         self._num_class = num_class
@@ -75,7 +75,7 @@ class DefaultHead(nn.Module):
     def __init__(self, num_filters, num_class, num_anchor_per_loc,
                  box_code_size, num_direction_bins, use_direction_classifier,
                  encode_background_as_zeros):
-        super().__init__()
+        super(DefaultHead, self).__init__()
         self._num_anchor_per_loc = num_anchor_per_loc
         self._num_direction_bins = num_direction_bins
         self._num_class = num_class
@@ -121,7 +121,7 @@ class DefaultHead(nn.Module):
 @register_voxelnet
 class VoxelNetNuscenesMultiHead(VoxelNet):
     def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+        super(VoxelNetNuscenesMultiHead, self).__init__(*args, **kw)
         assert self._num_class == 10
         assert isinstance(self.rpn, rpn.RPNNoHead)
         self.small_classes = ["pedestrian", "traffic_cone", "bicycle", "motorcycle", "barrier"]
@@ -134,7 +134,7 @@ class VoxelNetNuscenesMultiHead(VoxelNet):
             num_anchor_per_loc=small_num_anchor_loc,
             encode_background_as_zeros=self._encode_background_as_zeros,
             use_direction_classifier=self._use_direction_classifier,
-            box_code_size=self._box_coder.code_size, 
+            box_code_size=self._box_coder.code_size,
             num_direction_bins=self._num_direction_bins,
         )
         self.large_head = DefaultHead(
@@ -143,7 +143,7 @@ class VoxelNetNuscenesMultiHead(VoxelNet):
             num_anchor_per_loc=large_num_anchor_loc,
             encode_background_as_zeros=self._encode_background_as_zeros,
             use_direction_classifier=self._use_direction_classifier,
-            box_code_size=self._box_coder.code_size, 
+            box_code_size=self._box_coder.code_size,
             num_direction_bins=self._num_direction_bins,
         )
 

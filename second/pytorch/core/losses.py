@@ -103,7 +103,7 @@ class WeightedL2LocalizationLoss(Loss):
   Loss[b,a] = .5 * ||weights[b,a] * (prediction[b,a,:] - target[b,a,:])||^2
   """
   def __init__(self, code_weights=None):
-    super().__init__()
+    super(WeightedL2LocalizationLoss, self).__init__()
     if code_weights is not None:
       self._code_weights = np.array(code_weights, dtype=np.float32)
       self._code_weights = torch.from_numpy(self._code_weights)

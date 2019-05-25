@@ -20,7 +20,7 @@ from second.protos import second_pb2
 from second.pytorch.builder import losses_builder
 from second.pytorch.models.voxelnet import LossNormType, get_voxelnet_class
 
-def build(model_cfg: second_pb2.VoxelNet, voxel_generator,
+def build(model_cfg, voxel_generator,
           target_assigner, measure_time=False):
     """build second pytorch instance.
     """
@@ -61,7 +61,7 @@ def build(model_cfg: second_pb2.VoxelNet, voxel_generator,
         assert all([e == nms_post_max_sizes[0] for e in nms_post_max_sizes])
         assert all([e == nms_score_thresholds[0] for e in nms_score_thresholds])
         assert all([e == nms_iou_thresholds[0] for e in nms_iou_thresholds])
-    
+
     num_input_features = model_cfg.num_point_features
     loss_norm_type_dict = {
         0: LossNormType.NormByNumExamples,

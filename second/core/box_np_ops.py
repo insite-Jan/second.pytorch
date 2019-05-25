@@ -82,12 +82,12 @@ def second_box_encode(boxes,
         ray = np.sin(ra)
         rtx = rgx - rax
         rty = rgy - ray
-        cts = np.concatenate(cts, axis=1)
-        return np.concatenate([xt, yt, zt, wt, lt, ht, rtx, rty, cts], axis=1)
+        # cts = np.concatenate(cts, axis=1)
+        return np.concatenate([xt, yt, zt, wt, lt, ht, rtx, rty] + cts, axis=1)
     else:
         rt = rg - ra
-        cts = np.concatenate(cts, axis=1)
-        return np.concatenate([xt, yt, zt, wt, lt, ht, rt, cts], axis=1)
+        # cts = np.concatenate(cts, axis=1)
+        return np.concatenate([xt, yt, zt, wt, lt, ht, rt] + cts, axis=1)
 
 
 
@@ -143,8 +143,8 @@ def second_box_decode(box_encodings,
     else:
         rg = rt + ra
     cgs = [t + a for t, a in zip(cts, cas)]
-    cgs = np.concatenate(cgs, axis=1)
-    return np.concatenate([xg, yg, zg, wg, lg, hg, rg, cgs], axis=-1)
+    # cgs = np.concatenate(cgs, axis=1)
+    return np.concatenate([xg, yg, zg, wg, lg, hg, rg] + cgs, axis=-1)
 
 
 def bev_box_encode(boxes,

@@ -173,7 +173,7 @@ def train(config_path,
         config = pipeline_pb2.TrainEvalPipelineConfig()
         with open(str(config_path), "r") as f:
             proto_str = f.read()
-            if os.environ["KITTI_DATASET_ROOT"] is not None
+            if os.environ["KITTI_DATASET_ROOT"] is not None:
                 proto_str.replace("$KITTI_DATASET_ROOT", os.environ["KITTI_DATASET_ROOT"])
             text_format.Merge(proto_str, config)
     else:

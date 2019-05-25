@@ -195,7 +195,8 @@ def train(config_path,
     class_names = target_assigner.classes
 
 
-    print("num_trainable parameters:", len(list(net.parameters())))
+    print("num_trainable layers:", len(list(net.parameters())))
+    # print([np.shape(x) for x in list(net.parameters())])
     # for n, p in net.named_parameters():
     #     print(n, p.shape)
     # we need global_step to create lr_scheduler, so restore net first.
@@ -429,7 +430,7 @@ def train(config_path,
                         model_logging.log_text("Evaluation {}".format(k), global_step)
                         model_logging.log_text(v, global_step)
                     model_logging.log_metrics(result_dict["detail"], global_step)
-                    with open(result_path_step / "result.pkl", 'wb') as f:
+                    with open(str(result_path_step / "result.pkl"), 'wb') as f:
                         pickle.dump(detections, f)
                     net.train()
                 step += 1
